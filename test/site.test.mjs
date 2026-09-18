@@ -33,6 +33,16 @@ test('quiz entrypoints and Pages workflow exist', () => {
   assert.equal(existsSync(resolve(root, '.github/workflows/pages.yml')), true);
 });
 
+test('survival game exposes a self-contained sound control and score module', () => {
+  const entrypoint = read('quizzes/youre-next-survival/index.html');
+  const app = read('quizzes/youre-next-survival/assets/app.mjs');
+  const workflow = read('.github/workflows/pages.yml');
+  assert.match(entrypoint, /id=["']sound-toggle["']/);
+  assert.match(app, /from ['"]\.\/audio\.mjs['"]/);
+  assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/assets/audio.mjs')), true);
+  assert.match(workflow, /node --check quizzes\/youre-next-survival\/assets\/audio\.mjs/);
+});
+
 test('every local stylesheet, module, and favicon reference resolves', () => {
   for (const path of publishedPages) {
     const html = read(path);
