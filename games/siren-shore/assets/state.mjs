@@ -59,6 +59,13 @@ export function nextId(state, prefix) {
 function migrate(candidate) {
   const base = createDefaultState(() => 0.5);
   if (!candidate || typeof candidate !== 'object') return base;
+  const savedNpcs = candidate.npcs && typeof candidate.npcs === 'object' ? candidate.npcs : {};
+  const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => [id, {
+    ...npc,
+    ...(savedNpcs[id] || {}),
+    possessions: Array.isArray(savedNpcs[id]?.possessions) ? savedNpcs[id].possessions : npc.possessions,
+    memories: Array.isArray(savedNpcs[id]?.memories) ? savedNpcs[id].memories : npc.memories,
+  }]));
   const merged = {
     ...base,
     ...candidate,
@@ -67,7 +74,7 @@ function migrate(candidate) {
     progression: { ...base.progression, ...(candidate.progression || {}) },
     settings: { ...base.settings, ...(candidate.settings || {}) },
     counters: { ...base.counters, ...(candidate.counters || {}) },
-    npcs: { ...base.npcs, ...(candidate.npcs || {}) },
+    npcs,
     inventory: Array.isArray(candidate.inventory) ? candidate.inventory : [],
     purseIds: Array.isArray(candidate.purseIds) ? candidate.purseIds : [],
     equipped: candidate.equipped && typeof candidate.equipped === 'object' ? candidate.equipped : {},

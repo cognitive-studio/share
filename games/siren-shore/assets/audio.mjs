@@ -47,11 +47,11 @@ export function createAudioController({
     try {
       ensureGraph();
       await context.resume();
-      unlocked = true;
       if (current.music) await soundtrack.play();
+      unlocked = true;
       return { ok: true, warning: null };
     } catch {
-      unlocked = true;
+      unlocked = false;
       return { ok: false, warning: 'Sound was blocked. The game remains playable; try the music control again.' };
     }
   }

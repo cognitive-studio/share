@@ -68,6 +68,22 @@ test('blocked audio reports a nonblocking result', async () => {
   assert.match(result.warning, /sound/i);
 });
 
+test('a blocked unlock remains retryable from a later user gesture', async () => {
+  const context = fakeContext();
+  let attempts = 0;
+  context.resume = function resume() {
+    attempts += 1;
+    if (attempts === 1) return Promise.reject(new Error('policy'));
+    this.state = 'running';
+    return Promise.resolve();
+  };
+  const track = fakeTrack();
+  const audio = createAudioController({ audioContextFactory: () => context, audioFactory: () => track, soundtrackUrl: 'score.mp3' });
+  assert.equal((await audio.unlock()).ok, false);
+  assert.equal((await audio.unlock()).ok, true);
+  assert.equal(track.plays, 1);
+});
+
 test('Siren Shore ships a substantial original stereo score', () => {
   const score = resolve(import.meta.dirname, '../games/siren-shore/assets/siren-score.mp3');
   assert.equal(existsSync(score), true, 'siren-score.mp3 is missing');

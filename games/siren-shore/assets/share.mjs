@@ -12,6 +12,9 @@ const HEADLINES = {
   altercation: 'COMPOSURE WAS REARRANGED',
 };
 
+const RECEIPT_EVENTS = new Set(['rareFind', 'trade', 'snatch', 'victory', 'loss', 'levelUp']);
+export const shouldOfferReceipt = (events = []) => events.some(({ type }) => RECEIPT_EVENTS.has(type));
+
 export function createReceiptModel(state, locationHref) {
   const incident = state.lastIncident || { type: 'find', text: `${state.player.name} remains available for discovery.` };
   const object = state.inventory.find(({ id }) => id === incident.itemId) || {
@@ -34,7 +37,12 @@ export function createReceiptModel(state, locationHref) {
     npc,
     object: { name: object.name, colors: object.colors || ['#36e5d1', '#ff4faf'] },
     provenance: object.history?.at(-1) || object.origin || 'Acquired under conditions nobody can now verify.',
-    mermaid: { hair: state.player.hair, tail: state.player.tail, makeup: state.player.makeup },
+    mermaid: {
+      hair: state.player.hair,
+      tail: state.player.tail,
+      makeup: state.player.makeup,
+      equippedItems: Object.values(state.equipped || {}).map((id) => state.inventory.find((item) => item.id === id && item.ownerId === 'player')).filter(Boolean),
+    },
     url: cleanUrl(locationHref),
   };
 }
@@ -68,6 +76,13 @@ function drawReceiptMermaid(context, model) {
   context.strokeStyle=model.mermaid.makeup%2?'#ff4faf':'#4d1837';context.beginPath();context.arc(0,39,28,.15,Math.PI-.15);context.stroke();
   context.fillStyle=model.mermaid.hair%2?'#ff4faf':'#1b102e';context.beginPath();context.arc(0,-70,125,Math.PI,Math.PI*2);for(let i=-3;i<=3;i+=1)context.arc(i*38,-110-Math.abs(i)*9,42,0,Math.PI*2);context.fill();
   context.fillStyle='#fff1d0';context.beginPath();context.moveTo(-88,92);context.lineTo(0,48);context.lineTo(88,92);context.lineTo(52,155);context.lineTo(-52,155);context.closePath();context.fill();
+  for (const item of model.mermaid.equippedItems || []) {
+    context.strokeStyle=item.colors?.[0]||'#ff4faf';context.fillStyle=item.colors?.[1]||'#36e5d1';context.lineWidth=10;
+    if(item.slot==='crown'||item.slot==='hair'){context.beginPath();context.moveTo(-90,-98);context.lineTo(-48,-170);context.lineTo(0,-112);context.lineTo(48,-170);context.lineTo(90,-98);context.stroke();}
+    else if(item.slot==='jewelry'||item.slot==='makeup'){context.beginPath();context.arc(0,120,35,0,Math.PI*2);context.stroke();}
+    else if(item.slot==='weapon'){context.beginPath();context.moveTo(92,70);context.lineTo(150,250);context.stroke();}
+    else {context.globalAlpha=.75;context.fillRect(-78,92,156,34);context.globalAlpha=1;}
+  }
   context.strokeStyle='#fff1d0';context.lineWidth=12;context.beginPath();context.moveTo(-75,-190);context.lineTo(-35,-125);context.lineTo(0,-225);context.lineTo(35,-125);context.lineTo(82,-190);context.stroke();
   context.restore();
 }
@@ -98,19 +113,29 @@ function canvasBlob(canvas) {
 }
 
 export async function shareReceipt({ canvas, navigatorObject = navigator, documentObject = document, locationHref = location.href }) {
-  const blob = await canvasBlob(canvas);
-  const file = typeof File === 'function' ? new File([blob], 'siren-shore-receipt.png', { type: 'image/png' }) : Object.assign(blob, { name: 'siren-shore-receipt.png' });
   const url = cleanUrl(locationHref);
+  let blob;
+  try { blob = await canvasBlob(canvas); }
+  catch {
+    try { await navigatorObject.clipboard?.writeText(url); } catch { /* URL remains available in the page. */ }
+    return { method: 'copy', canceled: false };
+  }
+  const file = typeof File === 'function' ? new File([blob], 'siren-shore-receipt.png', { type: 'image/png' }) : Object.assign(blob, { name: 'siren-shore-receipt.png' });
   const payload = { title: 'Siren Shore Receipt', text: 'The ocean keeps receipts. Mine is attached.', url, files: [file] };
   if (navigatorObject.share && navigatorObject.canShare?.({ files: payload.files })) {
     try { await navigatorObject.share(payload);return { method: 'native', canceled: false }; }
     catch (error) { if (error?.name === 'AbortError') return { method: 'native', canceled: true }; }
   }
-  const objectUrl = URL.createObjectURL(blob);
-  const anchor = documentObject.createElement('a');
-  anchor.href = objectUrl;anchor.download = 'siren-shore-receipt.png';
-  documentObject.body?.append?.(anchor);anchor.click();anchor.remove?.();
-  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+  try {
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = documentObject.createElement('a');
+    anchor.href = objectUrl;anchor.download = 'siren-shore-receipt.png';
+    documentObject.body?.append?.(anchor);anchor.click();anchor.remove?.();
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+  } catch {
+    try { await navigatorObject.clipboard?.writeText(url); } catch { /* URL remains visible. */ }
+    return { method: 'copy', canceled: false };
+  }
   try { await navigatorObject.clipboard?.writeText(url); } catch { /* Download remains successful. */ }
   return { method: 'download', canceled: false };
 }

@@ -55,6 +55,18 @@ test('collecting appends provenance and awards legend xp', () => {
   assert.equal(item.ownerId, 'player');
   assert.match(item.history.at(-1), /claimed by Your Majesty/i);
   assert.ok(result.state.progression.xp > 0);
+  assert.ok(result.state.purseIds.includes(item.id), 'new finds must remain at risk until home');
+});
+
+test('a full purse prevents claiming more field loot', () => {
+  const outing = createOuting(createDefaultState(() => 0.2), middle).state;
+  outing.player.purse = 'clam';
+  outing.purseIds = ['a', 'b', 'c'];
+  const find = outing.shore.finds[0];
+  const result = collectFind(outing, find.id);
+  assert.equal(result.state.shore.finds[0].collected, false);
+  assert.equal(result.state.inventory.some(({ id }) => id === find.item.id), false);
+  assert.match(result.events[0].text, /full/i);
 });
 
 test('purse capacity creates risk without limiting home storage', () => {
@@ -79,6 +91,17 @@ test('remixing preserves ancestry and consumes source objects', () => {
   assert.equal(result.state.inventory.length, 1);
   assert.deepEqual(result.state.inventory[0].parents.map(({ id }) => id), ['a', 'b']);
   assert.match(result.state.inventory[0].history.at(-1), /remixed/i);
+});
+
+test('remixing clears equipment references to consumed objects', () => {
+  const state = createDefaultState();
+  state.inventory = [
+    { id: 'a', name: 'Pearl Emergency', slot: 'jewelry', colors: ['#fff', '#0ff'], history: [], parents: [], ownerId: 'player' },
+    { id: 'b', name: 'Municipal Fork', slot: 'weapon', colors: ['#aaa', '#f0f'], history: [], parents: [], ownerId: 'player' },
+  ];
+  state.equipped = { jewelry: 'a', weapon: 'b' };
+  const result = remixItems(state, ['a', 'b'], middle);
+  assert.deepEqual(result.state.equipped, {});
 });
 
 test('an NPC remembers a stolen tiara when it is worn later', () => {
@@ -112,11 +135,25 @@ test('SNATCH READ FLOURISH resolves nonlethally and can move property', () => {
   assert.ok(state.npcs.cynthia.wins + state.npcs.cynthia.losses === 1);
 });
 
+test('losing equipped property removes it from the public look', () => {
+  let state = seedState();
+  state.mode = 'ocean';
+  const stolen = resolveEncounter(state, 'cynthia', 'snatch', low).state;
+  const item = stolen.inventory.find(({ ownerId }) => ownerId === 'player');
+  state = equipItem(stolen, item.id).state;
+  state.mode = 'fight';
+  state.fight = { npcId: 'cynthia', playerScore: 0, npcScore: 0, round: 2 };
+  const result = resolveFightMove(state, 'cynthia', 'read', high);
+  assert.equal(result.state.equipped[item.slot], undefined);
+  assert.equal(result.state.npcs.cynthia.possessions.includes(item.id), true);
+});
+
 test('returning home protects possessions and the next shore never ends the game', () => {
   const outing = createOuting(createDefaultState(), middle).state;
   const home = returnHome(outing).state;
   const next = advanceShore(home, middle).state;
   assert.equal(home.mode, 'home');
+  assert.deepEqual(home.purseIds, [], 'everything is secured after returning home');
   assert.equal(next.mode, 'ocean');
   assert.equal(next.progression.shores, 1);
   assert.ok(next.shore.name);

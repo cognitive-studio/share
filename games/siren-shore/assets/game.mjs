@@ -54,6 +54,18 @@ function seedNpcPossessions(state, random) {
   }
 }
 
+function purse(state) {
+  return PURSES.find(({ id }) => id === state.player.purse) || PURSES[1];
+}
+
+function hasPurseRoom(state) {
+  return state.purseIds.length < purse(state).capacity;
+}
+
+function clearEquippedItem(state, itemId) {
+  for (const [slot, equippedId] of Object.entries(state.equipped)) if (equippedId === itemId) delete state.equipped[slot];
+}
+
 export function createOuting(input, random = Math.random) {
   const state = clone(input);
   state.mode = 'ocean';
@@ -69,11 +81,13 @@ export function collectFind(input, findId) {
   const events = [];
   const find = state.shore.finds?.find(({ id }) => id === findId);
   if (!find || find.collected) return { state, events: [event('notice', 'There is nothing left here but implication.')] };
+  if (!hasPurseRoom(state)) return { state, events: [event('notice', `${purse(state).name} is full. Return home, edit the bag, then come back for her.`)] };
   find.collected = true;
   const item = find.item;
   item.ownerId = 'player';
   item.history.push(`Claimed by ${state.player.name} at ${state.shore.name}.`);
   state.inventory.push(item);
+  state.purseIds.push(item.id);
   state.progression.finds += 1;
   state.lastIncident = { type: 'find', itemId: item.id, itemName: item.name, shore: state.shore.name, text: `${state.player.name} found ${item.name}.` };
   events.push(event(item.rarity.includes('One') || item.rarity.includes('Museum') ? 'rareFind' : 'find', `${item.name}. Unfortunately, it is perfect.`, { itemId: item.id }));
@@ -83,14 +97,14 @@ export function collectFind(input, findId) {
 
 export function packItem(input, itemId) {
   const state = clone(input);
-  const purse = PURSES.find(({ id }) => id === state.player.purse) || PURSES[1];
+  const selectedPurse = purse(state);
   if (state.purseIds.includes(itemId)) return { state, events: [event('notice', 'That is already in the purse, creating tension.')] };
-  if (state.purseIds.length >= purse.capacity) return { state, events: [event('notice', `${purse.name} is full. Edit your truth.`)] };
+  if (state.purseIds.length >= selectedPurse.capacity) return { state, events: [event('notice', `${selectedPurse.name} is full. Edit your truth.`)] };
   if (!state.inventory.some(({ id, ownerId }) => id === itemId && (ownerId === 'player' || ownerId == null))) return { state, events: [event('notice', 'You cannot pack what is not currently yours.')] };
   state.purseIds.push(itemId);
   const item = state.inventory.find(({ id }) => id === itemId);
   item.ownerId = 'player';
-  item.history.push(`Packed in the ${purse.name}; therefore placed at risk.`);
+  item.history.push(`Packed in the ${selectedPurse.name}; therefore placed at risk.`);
   return { state, events: [event('pack', `${item.name} enters the purse and the public record.`)] };
 }
 
@@ -109,6 +123,7 @@ export function remixItems(input, itemIds, random = Math.random) {
   if (sources.length < 2) return { state, events: [event('notice', 'Remixing requires at least two regrettable decisions.')] };
   state.inventory = state.inventory.filter((item) => !itemIds.includes(item.id));
   state.purseIds = state.purseIds.filter((id) => !itemIds.includes(id));
+  for (const id of itemIds) clearEquippedItem(state, id);
   const child = generateItem(random, { id: nextId(state, 'item'), ownerId: 'player', shoreName: 'your private grotto workroom' });
   child.name = `${sources[0].name.split(' ').slice(0, 2).join(' ')} ${sources.at(-1).name.split(' ').at(-1)} Situation`;
   child.parents = sources.map(({ id, name }) => ({ id, name }));
@@ -132,10 +147,13 @@ function transfer(state, item, from, to, note) {
   item.ownerId = to;
   item.history.push(note);
   if (from !== 'player') state.npcs[from].possessions = state.npcs[from].possessions.filter((id) => id !== item.id);
-  else state.purseIds = state.purseIds.filter((id) => id !== item.id);
+  else {
+    state.purseIds = state.purseIds.filter((id) => id !== item.id);
+    clearEquippedItem(state, item.id);
+  }
   if (to !== 'player') {
     if (!state.npcs[to].possessions.includes(item.id)) state.npcs[to].possessions.push(item.id);
-  }
+  } else if (state.mode === 'ocean' || state.mode === 'fight') state.purseIds.push(item.id);
 }
 
 function rememberedObject(state, npc) {
@@ -163,8 +181,8 @@ export function resolveEncounter(input, npcId, action, random = Math.random) {
     const theirs = npcItem(state, npc);
     const yours = playerAtRiskItem(state);
     if (theirs && yours) {
-      transfer(state, theirs, npcId, 'player', `Traded by ${npc.name} to ${state.player.name}.`);
       transfer(state, yours, 'player', npcId, `Traded by ${state.player.name} to ${npc.name}.`);
+      transfer(state, theirs, npcId, 'player', `Traded by ${npc.name} to ${state.player.name}.`);
       npc.friendship += 1;
       events.push(event('trade', `${npc.name} accepts the trade and immediately revises the story.`, { itemId: theirs.id }));
       award(state, 18, 'trade', events);
@@ -180,6 +198,7 @@ export function resolveEncounter(input, npcId, action, random = Math.random) {
   } else if (action === 'snatch') {
     const theirs = npcItem(state, npc);
     if (!theirs) events.push(event('notice', `${npc.name} has nothing available except an attitude.`));
+    else if (!hasPurseRoom(state)) events.push(event('notice', 'Your purse is full. Even larceny requires editorship.'));
     else if (random() < 0.58) {
       transfer(state, theirs, npcId, 'player', `Snatched from ${npc.name} by ${state.player.name}.`);
       npc.rivalry += 4;
@@ -216,11 +235,12 @@ export function resolveFightMove(input, npcId, move, random = Math.random) {
     if (won) {
       npc.losses += 1;
       const item = npcItem(state, npc);
-      if (item) {
+      if (item && hasPurseRoom(state)) {
         transfer(state, item, npcId, 'player', `Won from ${npc.name} during an altercation at ${state.shore.name}.`);
         npc.memories.push({ type: 'loss', itemId: item.id, itemName: item.name, text: `Lost ${item.name} in an altercation.` });
         events.push(event('victory', `You win ${item.name}. ${npc.name} will be revising this outcome privately.`, { itemId: item.id }));
-      } else events.push(event('victory', `You win. ${npc.name} retains only her version of events.`));
+      } else if (item) events.push(event('victory', `You win, but your full purse turns the spoils into a future grievance.`));
+      else events.push(event('victory', `You win. ${npc.name} retains only her version of events.`));
       award(state, 45, 'altercation', events);
     } else {
       npc.wins += 1;
@@ -244,6 +264,7 @@ export function returnHome(input) {
   const state = clone(input);
   state.mode = 'home';
   state.fight = null;
+  state.purseIds = [];
   return { state, events: [event('home', 'Back in the grotto. Everything here is safe and nobody gets a vote.')] };
 }
 

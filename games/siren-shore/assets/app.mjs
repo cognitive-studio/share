@@ -1,9 +1,9 @@
 import { HAIR_STYLES, MAKEUP_STYLES, NPC_DEFINITIONS, PURSES, TAIL_STYLES } from './data.mjs';
 import { advanceShore, collectFind, createOuting, equipItem, packItem, remixItems, resolveEncounter, resolveFightMove, returnHome } from './game.mjs';
 import { createDefaultState, loadState, saveState, xpForLevel } from './state.mjs';
-import { createRenderer } from './render.mjs';
+import { appearanceForState, createRenderer } from './render.mjs';
 import { createAudioController } from './audio.mjs';
-import { createReceiptModel, renderReceipt, shareReceipt } from './share.mjs';
+import { createReceiptModel, renderReceipt, shareReceipt, shouldOfferReceipt } from './share.mjs';
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const byId = (root, id) => root.getElementById(id);
@@ -58,6 +58,7 @@ export function bootSirenShore(root = document, windowObject = window) {
   let activeNpcId = null;
   let lastTime = performance.now();
   let frame = 0;
+  let animationFrameId = 0;
   const canvas = byId(root, 'ocean-canvas');
   const renderer = createRenderer(canvas, { reducedMotion: windowObject.matchMedia?.('(prefers-reduced-motion: reduce)').matches });
   const portraitRenderer = createRenderer(byId(root, 'portrait-canvas'), { reducedMotion: true });
@@ -81,6 +82,7 @@ export function bootSirenShore(root = document, windowObject = window) {
     say(events.map(({ text }) => text).join(' '));
     for (const item of events) audio.playEffect(item.type);
     persist();
+    if (shouldOfferReceipt(events)) openSheet('share-sheet');
   };
   const transition = (result) => { state = result.state; applyEvents(result.events); renderUi(); };
 
@@ -152,7 +154,7 @@ export function bootSirenShore(root = document, windowObject = window) {
     byId(root, 'effects-toggle').checked = state.settings.effects;
     updateContextLabel();
     renderInventory();
-    portraitRenderer.drawMermaidToContext({ hair: state.player.hair, tail: state.player.tail, makeup: state.player.makeup });
+    portraitRenderer.drawMermaidToContext(appearanceForState(state));
   }
 
   function updateContextLabel() {
@@ -163,7 +165,7 @@ export function bootSirenShore(root = document, windowObject = window) {
   function openSheet(id) {
     root.querySelectorAll('.sheet').forEach((sheet) => { sheet.hidden = sheet.id !== id; });
     const backdrop = root.querySelector('.sheet-backdrop');backdrop.hidden = false;
-    if (id === 'home-sheet') { portraitRenderer.resize();portraitRenderer.drawMermaidToContext({ hair: state.player.hair, tail: state.player.tail, makeup: state.player.makeup }); }
+    if (id === 'home-sheet') { portraitRenderer.resize();portraitRenderer.drawMermaidToContext(appearanceForState(state)); }
     if (id === 'inventory-sheet') renderInventory();
     if (id === 'share-sheet') {
       const model = createReceiptModel(state);
@@ -200,7 +202,7 @@ export function bootSirenShore(root = document, windowObject = window) {
     }
     renderer.renderFrame({ state, runtime, time });
     if (!(frame++ % 8)) updateContextLabel();
-    requestAnimationFrame(tick);
+    animationFrameId = requestAnimationFrame(tick);
   }
 
   populateSelect('hair-select', HAIR_STYLES, state.player.hair);
@@ -209,7 +211,11 @@ export function bootSirenShore(root = document, windowObject = window) {
   populateSelect('purse-select', PURSES, state.player.purse);
   newNpcPositions();
 
-  byId(root, 'begin-game').addEventListener('click', async () => { await audio.unlock();byId(root, 'audio-gate').classList.add('is-gone');say(loaded.warning || 'The ocean has been briefed.'); });
+  byId(root, 'begin-game').addEventListener('click', async (event) => {
+    const result = await audio.unlock();
+    if (!result.ok) { event.currentTarget.textContent = 'TRY SOUND AGAIN';say(result.warning);return; }
+    byId(root, 'audio-gate').classList.add('is-gone');say(loaded.warning || 'The ocean has been briefed.');
+  });
   byId(root, 'enter-ocean').addEventListener('click', () => { if (!state.shore.finds) transition(createOuting(state, Math.random)); else { state.mode='ocean';persist();renderUi(); }newNpcPositions();audio.setScene('ocean'); });
   root.querySelectorAll('[data-open]').forEach((button) => button.addEventListener('click', () => openSheet(button.dataset.open)));
   root.querySelectorAll('[data-close-sheets]').forEach((button) => button.addEventListener('click', closeSheets));
@@ -234,8 +240,8 @@ export function bootSirenShore(root = document, windowObject = window) {
   createInputController({pad:byId(root,'move-pad'),knob:byId(root,'move-knob'),actionButton:byId(root,'action-button'),target:windowObject,onMove:(x,y)=>{movement={x,y};},onAction:contextualAction});
   const resize=()=>{renderer.resize();portraitRenderer.resize();};windowObject.addEventListener('resize',resize);windowObject.addEventListener('orientationchange',resize);
   root.addEventListener('visibilitychange',()=>root.hidden?audio.suspend():audio.resume());
-  renderUi();requestAnimationFrame(tick);
-  return { getState:()=>state, destroy(){cancelAnimationFrame(frame);renderer.destroy();portraitRenderer.destroy();audio.destroy();} };
+  renderUi();animationFrameId=requestAnimationFrame(tick);
+  return { getState:()=>state, destroy(){cancelAnimationFrame(animationFrameId);renderer.destroy();portraitRenderer.destroy();audio.destroy();} };
 }
 
 if (typeof document !== 'undefined') bootSirenShore();

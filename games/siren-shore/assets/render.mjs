@@ -1,5 +1,16 @@
 const TAU = Math.PI * 2;
 
+export function appearanceForState(state) {
+  return {
+    hair: state.player.hair,
+    tail: state.player.tail,
+    makeup: state.player.makeup,
+    equippedItems: Object.values(state.equipped || {})
+      .map((id) => state.inventory.find((item) => item.id === id && item.ownerId === 'player'))
+      .filter(Boolean),
+  };
+}
+
 function seededUnit(value) {
   const x = Math.sin(value * 999.91) * 43758.5453;
   return x - Math.floor(x);
@@ -74,7 +85,7 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
     context.restore();
   }
 
-  function drawMermaid({ x, y, hair = 0, tail = 0, makeup = 0, palette, label, facing = 1, scale = 1, portrait = false }) {
+  function drawMermaid({ x, y, hair = 0, tail = 0, makeup = 0, equippedItems = [], palette, label, facing = 1, scale = 1, portrait = false }) {
     const colors = palette || [['#ff4faf', '#8b2f76', '#fff1d0'], ['#36e5d1', '#11788b', '#ffd29d'], ['#8b5cf6', '#4c2e85', '#ffe0c2']][tail % 3];
     context.save();
     context.translate(x, y);
@@ -100,6 +111,14 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
     if (portrait) {
       context.strokeStyle = '#fff1d0';context.lineWidth=3;context.beginPath();context.arc(0,-62,20,Math.PI,TAU);context.lineTo(0,-89);context.lineTo(10,-63);context.lineTo(25,-82);context.stroke();
     }
+    for (const item of equippedItems) {
+      context.strokeStyle=item.colors?.[0]||'#ff4faf';context.fillStyle=item.colors?.[1]||'#36e5d1';context.lineWidth=3;
+      if(item.slot==='crown'||item.slot==='hair'){context.beginPath();context.moveTo(-24,-43);context.lineTo(-13,-67);context.lineTo(0,-48);context.lineTo(13,-67);context.lineTo(24,-43);context.stroke();}
+      else if(item.slot==='jewelry'||item.slot==='makeup'){context.beginPath();context.arc(0,33,9,0,TAU);context.stroke();}
+      else if(item.slot==='weapon'){context.beginPath();context.moveTo(24,20);context.lineTo(44,80);context.stroke();}
+      else if(item.slot==='purse'){context.strokeRect(-37,36,18,15);}
+      else {context.globalAlpha=.75;context.fillRect(-18,25,36,10);context.globalAlpha=1;}
+    }
     context.scale(facing,1);
     if (label) { context.fillStyle='#fff';context.font='900 11px system-ui';context.textAlign='center';context.fillText(label,0,-58); }
     context.restore();
@@ -116,7 +135,7 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
     context.save();context.translate(-cameraX, -cameraY);
     for (const find of state.shore?.finds || []) if (!find.collected) drawItem(find.item, find.x, find.y, time, runtime.near?.id === find.id);
     for (const npc of runtime.npcs || []) drawMermaid({ ...npc, palette: state.npcs[npc.id]?.palette, label: state.npcs[npc.id]?.name.split(' ')[0].toUpperCase(), scale: .72 });
-    drawMermaid({ x: state.player.x, y: state.player.y, hair: state.player.hair, tail: state.player.tail, makeup: state.player.makeup, label: 'YOU', scale: .82 });
+    drawMermaid({ x: state.player.x, y: state.player.y, ...appearanceForState(state), label: 'YOU', scale: .82 });
     context.restore();
   }
 
@@ -140,7 +159,7 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
 
   function drawMermaidToContext(model) {
     oceanBackground(0, model.palette);
-    drawMermaid({ x: width/2, y: height*.46, hair:model.hair,tail:model.tail,makeup:model.makeup,palette:model.palette,scale:1.1,portrait:true });
+    drawMermaid({ x: width/2, y: height*.46, hair:model.hair,tail:model.tail,makeup:model.makeup,equippedItems:model.equippedItems||[],palette:model.palette,scale:1.1,portrait:true });
   }
 
   function worldToScreen(x, y, player) {

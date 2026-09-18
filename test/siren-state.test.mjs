@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createDefaultState, levelForXp, loadState, nextId, saveState, xpForLevel } from '../games/siren-shore/assets/state.mjs';
+import { SAVE_KEY, createDefaultState, levelForXp, loadState, nextId, saveState, xpForLevel } from '../games/siren-shore/assets/state.mjs';
 
 function memoryStorage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -43,6 +43,15 @@ test('save round trip preserves accumulated nonsense', () => {
   const loaded = loadState(storage);
   assert.equal(loaded.warning, null);
   assert.equal(loaded.state.inventory[0].name, 'Haunted Salad Fork');
+});
+
+test('partial legacy NPC records merge with playable defaults', () => {
+  const storage = memoryStorage({ [SAVE_KEY]: JSON.stringify({ version: 1, npcs: { cynthia: { friendship: 7 } } }) });
+  const loaded = loadState(storage);
+  assert.equal(loaded.state.npcs.cynthia.friendship, 7);
+  assert.equal(loaded.state.npcs.cynthia.name, 'Cynthia Undertow');
+  assert.deepEqual(loaded.state.npcs.cynthia.possessions, []);
+  assert.deepEqual(loaded.state.npcs.cynthia.memories, []);
 });
 
 test('corrupt saves are preserved and replaced with a playable state', () => {

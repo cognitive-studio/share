@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDefaultState } from '../games/siren-shore/assets/state.mjs';
-import { createReceiptModel, shareReceipt } from '../games/siren-shore/assets/share.mjs';
+import { createReceiptModel, shareReceipt, shouldOfferReceipt } from '../games/siren-shore/assets/share.mjs';
 
 function scandalState() {
   const state = createDefaultState();
@@ -28,6 +28,13 @@ test('receipt model turns persistent scandal into editorial evidence', () => {
   assert.match(model.object.name, /Tiara/);
   assert.match(model.provenance, /Snatched/);
   assert.equal(model.url, 'https://example.test/share/games/siren-shore/');
+});
+
+test('major finds and incidents offer a receipt without interrupting ordinary notices', () => {
+  assert.equal(shouldOfferReceipt([{ type: 'rareFind' }]), true);
+  assert.equal(shouldOfferReceipt([{ type: 'snatch' }]), true);
+  assert.equal(shouldOfferReceipt([{ type: 'victory' }]), true);
+  assert.equal(shouldOfferReceipt([{ type: 'notice' }]), false);
 });
 
 test('native file sharing is preferred when the phone supports it', async () => {
