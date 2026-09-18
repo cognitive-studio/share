@@ -66,6 +66,22 @@ h1 em { color: var(--purple); font-style: normal; text-shadow: 4px 4px 0 var(--c
 .survival-copy p { color: #bcb4a4; }
 .survival-copy .launch { background: #e5deca; color: #111; }
 
+.siren-card { background: #06192f; color: #edfaff; }
+.siren-art { position: relative; overflow: hidden; background: repeating-radial-gradient(ellipse at 50% 0, transparent 0 24px, rgb(53 231 210 / .16) 25px 27px), radial-gradient(circle at 50% 38%, #147194 0, #0b3a62 38%, #06142d 76%); }
+.siren-art::before { width: 330px; border-color: #35e7d2; background: rgb(53 231 210 / .08); box-shadow: 10px 10px 0 #ff4fae; }
+.siren-art::after { content: ''; position: absolute; inset: 0; opacity: .14; background: repeating-linear-gradient(0deg, transparent 0 3px, #fff 4px); }
+.siren-crown { position: absolute; z-index: 2; left: 50%; top: 14%; transform: translateX(-50%) rotate(-7deg); color: #fff0bd; font-size: clamp(4rem, 15vw, 8rem); text-shadow: 7px 7px 0 #ff4fae; transition: transform .2s ease; }
+.siren-tail { position: absolute; z-index: 1; left: 50%; bottom: -10%; width: 32%; height: 65%; transform: translateX(-50%); background: linear-gradient(100deg, #128c9f, #35e7d2 48%, #8c5aff); clip-path: polygon(35% 0, 65% 0, 70% 65%, 100% 100%, 50% 87%, 0 100%, 30% 65%); filter: drop-shadow(8px 5px 0 rgb(255 79 174 / .65)); }
+.siren-bubble { position: absolute; z-index: 3; width: 18px; height: 18px; border: 2px solid rgb(255 255 255 / .72); border-radius: 50%; }
+.bubble-one { left: 18%; top: 25%; }
+.bubble-two { right: 20%; top: 42%; width: 31px; height: 31px; }
+.bubble-three { left: 29%; bottom: 20%; width: 10px; height: 10px; }
+.siren-copy .category { background: #35e7d2; color: #07142b; }
+.siren-copy h3 em { color: #ff4fae; }
+.siren-copy p { color: #c5dbe5; }
+.siren-copy .launch { background: #35e7d2; color: #07142b; }
+.siren-card:hover .siren-crown { transform: translateX(-50%) rotate(6deg) scale(1.08); }
+
 .coming-soon { display: flex; align-items: center; gap: 1rem; margin-top: 2.5rem; padding: 1.25rem; border-left: 8px solid var(--purple); background: white; }
 .coming-soon > span { font-size: 2rem; }
 .coming-soon strong { display: block; margin-bottom: .25rem; }
