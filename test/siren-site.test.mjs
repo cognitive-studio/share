@@ -9,7 +9,7 @@ const read = (path) => readFileSync(resolve(root, path), 'utf8');
 test('Siren Shore entrypoint is a phone-first semantic game shell', () => {
   const html = read('games/siren-shore/index.html');
   assert.match(html, /viewport-fit=cover/);
-  for (const id of ['ocean-canvas', 'move-pad', 'action-button', 'hud', 'toast', 'home-sheet', 'encounter-sheet', 'inventory-sheet', 'settings-sheet', 'share-sheet', 'music-toggle', 'effects-toggle']) {
+  for (const id of ['ocean-canvas', 'move-pad', 'action-button', 'hud', 'toast', 'receipt-offer', 'home-sheet', 'encounter-sheet', 'inventory-sheet', 'settings-sheet', 'share-sheet', 'music-toggle', 'effects-toggle', 'scale-select', 'fin-select', 'skip-audio']) {
     assert.match(html, new RegExp(`id=["']${id}["']`));
   }
   assert.match(html, /<button[^>]+id=["']action-button["']/);
@@ -52,6 +52,8 @@ test('game modules wire rendering, touch, keyboard, resizing, audio, and receipt
   assert.match(app, /id === 'home-sheet'[\s\S]{0,120}portraitRenderer\.resize\(\)/);
   assert.match(app, /if \(!\(frame\+\+ % 8\)\) updateContextLabel\(\)/);
   assert.doesNotMatch(app, /if \(!\(frame\+\+ % 8\)\) renderUi\(\)/);
+  assert.match(app, /shouldOfferReceipt\(events\)\) offerReceipt\(\)/);
+  assert.doesNotMatch(app, /shouldOfferReceipt\(events\)\) openSheet/);
 });
 
 test('Siren Shore contains no remote runtime dependencies', () => {

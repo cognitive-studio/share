@@ -54,6 +54,16 @@ test('partial legacy NPC records merge with playable defaults', () => {
   assert.deepEqual(loaded.state.npcs.cynthia.memories, []);
 });
 
+test('schema-invalid parsed saves are preserved and replaced safely', () => {
+  const raw = JSON.stringify({ version: 2, shore: null });
+  const storage = memoryStorage({ [SAVE_KEY]: raw });
+  const loaded = loadState(storage, () => 987);
+  assert.equal(loaded.recovered, true);
+  assert.match(loaded.warning, /recovered/i);
+  assert.equal(storage.getItem('siren-shore:recovery:987'), raw);
+  assert.ok(loaded.state.shore.name);
+});
+
 test('corrupt saves are preserved and replaced with a playable state', () => {
   const storage = memoryStorage({ 'siren-shore:save:v2': '{ruined' });
   const loaded = loadState(storage, () => 123456789);

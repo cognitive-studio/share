@@ -5,6 +5,8 @@ export function appearanceForState(state) {
     hair: state.player.hair,
     tail: state.player.tail,
     makeup: state.player.makeup,
+    scales: state.player.scales || 0,
+    fins: state.player.fins || 0,
     equippedItems: Object.values(state.equipped || {})
       .map((id) => state.inventory.find((item) => item.id === id && item.ownerId === 'player'))
       .filter(Boolean),
@@ -85,7 +87,7 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
     context.restore();
   }
 
-  function drawMermaid({ x, y, hair = 0, tail = 0, makeup = 0, equippedItems = [], palette, label, facing = 1, scale = 1, portrait = false }) {
+  function drawMermaid({ x, y, hair = 0, tail = 0, makeup = 0, scales = 0, fins = 0, equippedItems = [], palette, label, facing = 1, scale = 1, portrait = false }) {
     const colors = palette || [['#ff4faf', '#8b2f76', '#fff1d0'], ['#36e5d1', '#11788b', '#ffd29d'], ['#8b5cf6', '#4c2e85', '#ffe0c2']][tail % 3];
     context.save();
     context.translate(x, y);
@@ -94,6 +96,9 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
     context.beginPath();
     context.moveTo(-8, 20);context.bezierCurveTo(-30, 70, -22, 106, 0, 122);context.bezierCurveTo(16, 110, 26, 72, 8, 20);context.fill();
     context.beginPath();context.moveTo(-2, 116);context.lineTo(-34, 143);context.lineTo(0, 134);context.lineTo(34, 143);context.lineTo(2, 116);context.fill();
+    context.globalAlpha=.52;context.strokeStyle=colors[2]||'#fff1d0';context.lineWidth=2;
+    for(let row=0;row<4;row+=1)for(let column=-1;column<=1;column+=1){context.beginPath();context.arc(column*7+(row%2?3:0),58+row*13,3+(scales%3),0,TAU);context.stroke();}
+    context.globalAlpha=1;context.fillStyle=colors[fins%2];context.beginPath();context.moveTo(-10,70);context.lineTo(-35-(fins%3)*6,88);context.lineTo(-9,96);context.moveTo(10,70);context.lineTo(35+(fins%3)*6,88);context.lineTo(9,96);context.fill();
     context.fillStyle = '#eebc9f';
     context.beginPath();context.ellipse(0, 0, 19, 26, 0, 0, TAU);context.fill();
     context.strokeStyle = '#48142c';context.lineWidth = 3;
@@ -159,7 +164,7 @@ export function createRenderer(canvas, { reducedMotion = false } = {}) {
 
   function drawMermaidToContext(model) {
     oceanBackground(0, model.palette);
-    drawMermaid({ x: width/2, y: height*.46, hair:model.hair,tail:model.tail,makeup:model.makeup,equippedItems:model.equippedItems||[],palette:model.palette,scale:1.1,portrait:true });
+    drawMermaid({ x: width/2, y: height*.46, hair:model.hair,tail:model.tail,makeup:model.makeup,scales:model.scales||0,fins:model.fins||0,equippedItems:model.equippedItems||[],palette:model.palette,scale:1.1,portrait:true });
   }
 
   function worldToScreen(x, y, player) {

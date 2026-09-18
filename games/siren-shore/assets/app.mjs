@@ -1,4 +1,4 @@
-import { HAIR_STYLES, MAKEUP_STYLES, NPC_DEFINITIONS, PURSES, TAIL_STYLES } from './data.mjs';
+import { FIN_STYLES, HAIR_STYLES, MAKEUP_STYLES, NPC_DEFINITIONS, PURSES, SCALE_STYLES, TAIL_STYLES } from './data.mjs';
 import { advanceShore, collectFind, createOuting, equipItem, packItem, remixItems, resolveEncounter, resolveFightMove, returnHome } from './game.mjs';
 import { createDefaultState, loadState, saveState, xpForLevel } from './state.mjs';
 import { appearanceForState, createRenderer } from './render.mjs';
@@ -82,7 +82,7 @@ export function bootSirenShore(root = document, windowObject = window) {
     say(events.map(({ text }) => text).join(' '));
     for (const item of events) audio.playEffect(item.type);
     persist();
-    if (shouldOfferReceipt(events)) openSheet('share-sheet');
+    if (shouldOfferReceipt(events)) offerReceipt();
   };
   const transition = (result) => { state = result.state; applyEvents(result.events); renderUi(); };
 
@@ -168,10 +168,12 @@ export function bootSirenShore(root = document, windowObject = window) {
     if (id === 'home-sheet') { portraitRenderer.resize();portraitRenderer.drawMermaidToContext(appearanceForState(state)); }
     if (id === 'inventory-sheet') renderInventory();
     if (id === 'share-sheet') {
+      byId(root, 'receipt-offer').hidden = true;
       const model = createReceiptModel(state);
       renderReceipt(byId(root, 'receipt-canvas'), model);
     }
   }
+  function offerReceipt() { byId(root, 'receipt-offer').hidden = false; }
   function closeSheets() { root.querySelectorAll('.sheet').forEach((sheet) => { sheet.hidden = true; });root.querySelector('.sheet-backdrop').hidden = true; }
 
   function encounter(npcId) {
@@ -208,6 +210,8 @@ export function bootSirenShore(root = document, windowObject = window) {
   populateSelect('hair-select', HAIR_STYLES, state.player.hair);
   populateSelect('tail-select', TAIL_STYLES, state.player.tail);
   populateSelect('makeup-select', MAKEUP_STYLES, state.player.makeup);
+  populateSelect('scale-select', SCALE_STYLES, state.player.scales);
+  populateSelect('fin-select', FIN_STYLES, state.player.fins);
   populateSelect('purse-select', PURSES, state.player.purse);
   newNpcPositions();
 
@@ -216,11 +220,13 @@ export function bootSirenShore(root = document, windowObject = window) {
     if (!result.ok) { event.currentTarget.textContent = 'TRY SOUND AGAIN';say(result.warning);return; }
     byId(root, 'audio-gate').classList.add('is-gone');say(loaded.warning || 'The ocean has been briefed.');
   });
+  byId(root, 'skip-audio').addEventListener('click', () => { byId(root, 'audio-gate').classList.add('is-gone');say('You enter silently. Music remains available under More.'); });
+  byId(root, 'receipt-offer').addEventListener('click', () => openSheet('share-sheet'));
   byId(root, 'enter-ocean').addEventListener('click', () => { if (!state.shore.finds) transition(createOuting(state, Math.random)); else { state.mode='ocean';persist();renderUi(); }newNpcPositions();audio.setScene('ocean'); });
   root.querySelectorAll('[data-open]').forEach((button) => button.addEventListener('click', () => openSheet(button.dataset.open)));
   root.querySelectorAll('[data-close-sheets]').forEach((button) => button.addEventListener('click', closeSheets));
   root.querySelectorAll('[data-tab="home"]').forEach((button) => button.addEventListener('click', () => { transition(returnHome(state));closeSheets();audio.setScene('home'); }));
-  for (const [id, key] of [['hair-select','hair'],['tail-select','tail'],['makeup-select','makeup']]) byId(root,id).addEventListener('change',(event)=>{state.player[key]=Number(event.target.value);persist();renderUi();audio.playEffect('equip');});
+  for (const [id, key] of [['hair-select','hair'],['tail-select','tail'],['makeup-select','makeup'],['scale-select','scales'],['fin-select','fins']]) byId(root,id).addEventListener('change',(event)=>{state.player[key]=Number(event.target.value);persist();renderUi();audio.playEffect('equip');});
   byId(root,'purse-select').addEventListener('change',(event)=>{state.player.purse=event.target.value;state.purseIds=[];persist();renderUi();audio.playEffect('pack');});
   byId(root, 'equip-item').addEventListener('click', () => selectedItemId && transition(equipItem(state, selectedItemId)));
   byId(root, 'pack-item').addEventListener('click', () => selectedItemId && transition(packItem(state, selectedItemId)));
@@ -231,7 +237,7 @@ export function bootSirenShore(root = document, windowObject = window) {
     if(action==='fight'){byId(root,'encounter-actions').hidden=true;byId(root,'fight-actions').hidden=false;audio.setScene('fight');}
   }));
   root.querySelectorAll('[data-fight]').forEach((button) => button.addEventListener('click',()=>{const result=resolveFightMove(state,activeNpcId,button.dataset.fight,Math.random);transition(result);if(!state.fight){closeSheets();audio.setScene('ocean');}else byId(root,'fight-score').textContent=`YOU ${state.fight.playerScore} · HER ${state.fight.npcScore}`;}));
-  byId(root,'music-toggle').addEventListener('change',(event)=>audio.setMusicEnabled(event.target.checked));
+  byId(root,'music-toggle').addEventListener('change',async(event)=>{audio.setMusicEnabled(event.target.checked);if(event.target.checked){const result=await audio.unlock();if(!result.ok)say(result.warning);}});
   byId(root,'effects-toggle').addEventListener('change',(event)=>audio.setEffectsEnabled(event.target.checked));
   byId(root,'new-shore').addEventListener('click',()=>{transition(advanceShore(state,Math.random));newNpcPositions();closeSheets();audio.setScene('ocean');});
   byId(root,'return-home').addEventListener('click',()=>{transition(returnHome(state));closeSheets();audio.setScene('home');});

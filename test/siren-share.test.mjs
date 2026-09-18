@@ -34,6 +34,8 @@ test('major finds and incidents offer a receipt without interrupting ordinary no
   assert.equal(shouldOfferReceipt([{ type: 'rareFind' }]), true);
   assert.equal(shouldOfferReceipt([{ type: 'snatch' }]), true);
   assert.equal(shouldOfferReceipt([{ type: 'victory' }]), true);
+  assert.equal(shouldOfferReceipt([{ type: 'shade' }]), true);
+  assert.equal(shouldOfferReceipt([{ type: 'read' }]), true);
   assert.equal(shouldOfferReceipt([{ type: 'notice' }]), false);
 });
 

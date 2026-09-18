@@ -12,7 +12,7 @@ const HEADLINES = {
   altercation: 'COMPOSURE WAS REARRANGED',
 };
 
-const RECEIPT_EVENTS = new Set(['rareFind', 'trade', 'snatch', 'victory', 'loss', 'levelUp']);
+const RECEIPT_EVENTS = new Set(['rareFind', 'trade', 'snatch', 'victory', 'loss', 'levelUp', 'shade', 'read']);
 export const shouldOfferReceipt = (events = []) => events.some(({ type }) => RECEIPT_EVENTS.has(type));
 
 export function createReceiptModel(state, locationHref) {
@@ -41,6 +41,8 @@ export function createReceiptModel(state, locationHref) {
       hair: state.player.hair,
       tail: state.player.tail,
       makeup: state.player.makeup,
+      scales: state.player.scales || 0,
+      fins: state.player.fins || 0,
       equippedItems: Object.values(state.equipped || {}).map((id) => state.inventory.find((item) => item.id === id && item.ownerId === 'player')).filter(Boolean),
     },
     url: cleanUrl(locationHref),
@@ -70,6 +72,8 @@ function drawReceiptMermaid(context, model) {
   const tailColors = [['#36e5d1','#11859a'],['#ff4faf','#8b2f76'],['#8b5cf6','#4c2e85'],['#ff7a59','#bc3e67'],['#c5d8e8','#64748b']][model.mermaid.tail % 5];
   context.save();context.translate(x,y);
   context.fillStyle=tailColors[1];context.beginPath();context.moveTo(-34,65);context.bezierCurveTo(-110,220,-70,320,0,355);context.bezierCurveTo(90,300,100,190,34,65);context.fill();
+  context.globalAlpha=.55;context.strokeStyle=tailColors[0];context.lineWidth=6;for(let row=0;row<5;row+=1)for(let column=-1;column<=1;column+=1){context.beginPath();context.arc(column*24+(row%2?10:0),145+row*38,9+(model.mermaid.scales%3)*2,0,Math.PI*2);context.stroke();}context.globalAlpha=1;
+  context.fillStyle=tailColors[model.mermaid.fins%2];context.beginPath();context.moveTo(-32,185);context.lineTo(-125-(model.mermaid.fins%3)*18,230);context.lineTo(-28,260);context.moveTo(32,185);context.lineTo(125+(model.mermaid.fins%3)*18,230);context.lineTo(28,260);context.fill();
   context.beginPath();context.moveTo(-5,340);context.lineTo(-115,420);context.lineTo(0,390);context.lineTo(115,420);context.lineTo(5,340);context.fill();
   context.fillStyle='#efbc9f';context.beginPath();context.ellipse(0,0,72,92,0,0,Math.PI*2);context.fill();
   context.strokeStyle='#3d0b2f';context.lineWidth=10;context.beginPath();context.moveTo(-42,12);context.lineTo(-10,4);context.moveTo(10,4);context.lineTo(42,12);context.stroke();

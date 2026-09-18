@@ -34,6 +34,8 @@ export function createDefaultState(random = Math.random) {
       hair: 0,
       tail: 0,
       makeup: 0,
+      scales: 0,
+      fins: 0,
       purse: 'weekender',
       x: 600,
       y: 500,
@@ -59,6 +61,10 @@ export function nextId(state, prefix) {
 function migrate(candidate) {
   const base = createDefaultState(() => 0.5);
   if (!candidate || typeof candidate !== 'object') return base;
+  if ('shore' in candidate && (!candidate.shore || typeof candidate.shore !== 'object')) throw new Error('Invalid shore');
+  if ('player' in candidate && (!candidate.player || typeof candidate.player !== 'object')) throw new Error('Invalid player');
+  if ('inventory' in candidate && !Array.isArray(candidate.inventory)) throw new Error('Invalid inventory');
+  if ('npcs' in candidate && (!candidate.npcs || typeof candidate.npcs !== 'object')) throw new Error('Invalid cast');
   const savedNpcs = candidate.npcs && typeof candidate.npcs === 'object' ? candidate.npcs : {};
   const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => [id, {
     ...npc,
@@ -74,11 +80,14 @@ function migrate(candidate) {
     progression: { ...base.progression, ...(candidate.progression || {}) },
     settings: { ...base.settings, ...(candidate.settings || {}) },
     counters: { ...base.counters, ...(candidate.counters || {}) },
+    shore: { ...base.shore, ...(candidate.shore || {}), finds: Array.isArray(candidate.shore?.finds) ? candidate.shore.finds : base.shore.finds },
     npcs,
     inventory: Array.isArray(candidate.inventory) ? candidate.inventory : [],
     purseIds: Array.isArray(candidate.purseIds) ? candidate.purseIds : [],
     equipped: candidate.equipped && typeof candidate.equipped === 'object' ? candidate.equipped : {},
   };
+  if (!merged.shore.name || !merged.player.name) throw new Error('Invalid save identity');
+  if (!['home', 'ocean', 'fight'].includes(merged.mode)) merged.mode = 'home';
   merged.progression.level = levelForXp(merged.progression.xp);
   return merged;
 }

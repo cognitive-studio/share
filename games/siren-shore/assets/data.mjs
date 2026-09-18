@@ -75,3 +75,5 @@ export const PURSES = Object.freeze([
 export const HAIR_STYLES = Object.freeze(['Cathedral Bouffant', 'Wet-Look Verdict', 'Executive Kelp', 'Pageant Storm', 'Severe Pearl Bob', 'Unlicensed Beehive']);
 export const TAIL_STYLES = Object.freeze(['Cobalt Scandal', 'Radioactive Coral', 'Widow Purple', 'Champagne Kelp', 'Chrome Divorce']);
 export const MAKEUP_STYLES = Object.freeze(['Editorial Mourning', 'Poolside Revenge', 'Municipal Glamour', 'Pearl Emergency', 'No Comment']);
+export const SCALE_STYLES = Object.freeze(['Champagne Chevron', 'Disco Verdict', 'Oil-Slick Inheritance', 'Pearlescent Alibi', 'Radioactive Ombré']);
+export const FIN_STYLES = Object.freeze(['Cathedral Fan', 'Executive Ruffle', 'Widow’s Wing', 'Municipal Spikes', 'Soft Launch Frill']);
