@@ -47,6 +47,23 @@ button:focus-visible, a:focus-visible { outline: 4px solid var(--purple); outlin
 .brand-mark { padding: .1rem .35rem; background: var(--pink); color: white; transform: rotate(-2deg); }
 .brand-tail { color: var(--purple); }
 .edition { margin-left: auto; font-size: .67rem; font-weight: 850; letter-spacing: .09em; }
+.quiz-share {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .45rem .65rem;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  font-size: .65rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.quiz-share:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+.quiz-share[data-share-status="success"] { background: var(--lime); }
+.quiz-share[data-share-status="error"] { background: var(--pink); color: white; }
 
 .quiz-shell { width: min(1120px, 100%); margin: 0 auto; padding: clamp(1.2rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2.5rem) 4rem; }
 .quiz-shell h1:focus { outline: none; }
@@ -155,6 +172,8 @@ blockquote { margin: 2rem 0 1rem; padding: 1rem 1.2rem; border-left: 8px solid v
 @media (max-width: 760px) {
   .site-bar { min-height: 54px; }
   .edition { font-size: .58rem; max-width: 112px; text-align: right; }
+  .quiz-share { width: 38px; padding: .4rem; justify-content: center; }
+  .quiz-share [data-share-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
   .quiz-shell { padding-top: 1rem; }
   .cover { display: flex; flex-direction: column; min-height: auto; gap: 1.2rem; }
   .cover-art { order: -1; width: 100%; min-height: 255px; }
