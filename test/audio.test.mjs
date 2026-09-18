@@ -3,9 +3,17 @@ import assert from 'node:assert/strict';
 import {
   scoreProfileForScene,
   openingMixProfile,
+  testSignalProfile,
   endingProfile,
   normalizeSoundPreference,
 } from '../quizzes/youre-next-survival/assets/audio.mjs';
+
+test('diagnostic signal is unmistakable on ordinary speakers', () => {
+  const signal = testSignalProfile();
+  assert.deepEqual(signal.frequencies, [440, 330, 220]);
+  assert.ok(signal.gain >= 0.12);
+  assert.ok(signal.duration >= 0.9);
+});
 
 test('opening score is audible on ordinary laptop and phone speakers', () => {
   const mix = openingMixProfile();
