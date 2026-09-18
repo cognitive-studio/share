@@ -83,6 +83,26 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 .brand span { padding: .22rem .42rem; background: var(--blood); color: white; transform: rotate(-1deg); }
 .brand b { font-family: var(--serif); font-size: 1rem; font-style: italic; color: var(--amber); }
 .edition { margin-left: auto; color: var(--muted); font-size: .65rem; font-weight: 800; letter-spacing: .16em; }
+.sound-toggle {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .38rem .58rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .11em;
+  cursor: pointer;
+}
+.sound-toggle:hover { border-color: var(--amber); color: var(--bone); }
+.sound-waves { height: 14px; display: flex; align-items: center; gap: 2px; }
+.sound-waves i { display: block; width: 2px; height: 5px; background: currentColor; animation: sound-wave 1.5s ease-in-out infinite; }
+.sound-waves i:nth-child(2) { height: 12px; animation-delay: -.5s; }
+.sound-waves i:nth-child(3) { height: 8px; animation-delay: -1s; }
+.sound-toggle[aria-pressed="false"] .sound-waves i { height: 2px; animation: none; }
 
 .game-shell {
   width: min(1180px, 100%);
@@ -155,6 +175,8 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 .primary:hover { background: var(--red); color: white; border-color: var(--red); transform: translateY(-2px); }
 .secondary:hover { background: rgb(229 222 202 / .09); transform: translateY(-2px); }
 .fine-print { color: #716d64; font-size: .69rem; line-height: 1.5; }
+.sound-note { margin: .8rem 0 -.35rem; color: var(--amber); font-family: var(--serif); font-size: .78rem; font-style: italic; }
+.sound-note span { display: inline-block; margin-right: .3rem; color: var(--red); font-family: var(--sans); font-style: normal; }
 
 .cover-visual {
   position: relative;
@@ -294,11 +316,14 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
 
 .enter { animation: enter .42s cubic-bezier(.22, .8, .2, 1) both; }
 @keyframes enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sound-wave { 0%, 100% { transform: scaleY(.45); } 50% { transform: scaleY(1); } }
 
 @media (max-width: 760px) {
   .site-bar { min-height: 56px; }
   .brand b { display: none; }
   .edition { font-size: .55rem; max-width: 128px; text-align: right; }
+  .sound-toggle { width: 35px; padding: .35rem; justify-content: center; }
+  .sound-toggle [data-sound-label] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
   .game-shell { padding-top: 1.1rem; }
   .cover { display: flex; min-height: auto; flex-direction: column; gap: .5rem; }
   .cover-visual { order: -1; width: 100%; min-height: 280px; }
@@ -336,4 +361,3 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--amber); outline
     transition-duration: .001ms !important;
   }
 }
-
