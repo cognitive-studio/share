@@ -20,10 +20,14 @@
         <span class="sound-waves" aria-hidden="true"><i></i><i></i><i></i></span>
         <span data-sound-label>SOUND ON</span>
       </button>
+      <button class="quiz-share" type="button" data-share-quiz data-share-title="Can You Survive You’re Next?" data-share-text="Enter the house and see whether you survive.">
+        <span aria-hidden="true">↗</span><span data-share-label>SHARE QUIZ</span>
+      </button>
     </header>
     <main id="game" class="game-shell" tabindex="-1"></main>
     <div id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <noscript>This house requires JavaScript. The intruders consider this a tactical advantage.</noscript>
     <script type="module" src="./assets/app.mjs"></script>
+    <script type="module" src="../../assets/share.mjs"></script>
   </body>
 </html>

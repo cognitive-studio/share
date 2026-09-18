@@ -79,3 +79,12 @@ test('published pages do not depend on remote assets', () => {
     assert.doesNotMatch(read(path), /https?:\/\//);
   }
 });
+
+test('every published quiz exposes the shared quiz-link control', () => {
+  for (const path of publishedPages.slice(1)) {
+    const html = read(path);
+    assert.match(html, /data-share-quiz/);
+    assert.match(html, /\.\.\/\.\.\/assets\/share\.mjs/);
+  }
+  assert.equal(existsSync(resolve(root, 'assets/share.mjs')), true);
+});
