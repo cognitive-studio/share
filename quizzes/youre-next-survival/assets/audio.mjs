@@ -7,11 +7,24 @@ const OPENING_MIX = Object.freeze({
   pulseGain: 0.035,
 });
 const MASTER_LEVEL = OPENING_MIX.masterGain;
+const TEST_SIGNAL = Object.freeze({
+  frequencies: Object.freeze([440, 330, 220]),
+  gain: 0.18,
+  duration: 1.05,
+});
 
 export function openingMixProfile() {
   return {
     ...OPENING_MIX,
     effectiveDroneGain: Number((OPENING_MIX.masterGain * OPENING_MIX.droneGain).toFixed(4)),
+  };
+}
+
+export function testSignalProfile() {
+  return {
+    frequencies: [...TEST_SIGNAL.frequencies],
+    gain: TEST_SIGNAL.gain,
+    duration: TEST_SIGNAL.duration,
   };
 }
 
@@ -188,6 +201,33 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     metal.stop(now + 0.6);
   }
 
+  async function testSound() {
+    if (destroyed || !soundEnabled || !AudioContextCtor) {
+      return { played: false, state: soundEnabled ? 'unavailable' : 'disabled' };
+    }
+    if (!started) await start();
+    if (context.state === 'suspended') await context.resume();
+    if (context.state !== 'running') return { played: false, state: context.state };
+
+    const startAt = context.currentTime + 0.03;
+    TEST_SIGNAL.frequencies.forEach((frequency, index) => {
+      const tone = context.createOscillator();
+      const gain = context.createGain();
+      const toneStart = startAt + index * 0.32;
+      const toneEnd = toneStart + 0.28;
+      tone.type = 'sine';
+      tone.frequency.setValueAtTime(frequency, toneStart);
+      gain.gain.setValueAtTime(0.0001, toneStart);
+      gain.gain.exponentialRampToValueAtTime(TEST_SIGNAL.gain, toneStart + 0.035);
+      gain.gain.setValueAtTime(TEST_SIGNAL.gain, toneEnd - 0.055);
+      gain.gain.exponentialRampToValueAtTime(0.0001, toneEnd);
+      tone.connect(gain).connect(context.destination);
+      tone.start(toneStart);
+      tone.stop(toneEnd + 0.02);
+    });
+    return { played: true, state: context.state };
+  }
+
   function endingTone(frequency, startDelay = 0, duration = 5, direct = false) {
     if (!frequency || !started || destroyed) return;
     const now = context.currentTime + startDelay;
@@ -273,6 +313,7 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     start,
     setScene,
     impact,
+    testSound,
     end,
     setEnabled,
     pause,
