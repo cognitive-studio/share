@@ -7,10 +7,17 @@ import {
   evidenceForResult,
   getProgress,
 } from './game.mjs';
+import {
+  createOminousScore,
+  normalizeSoundPreference,
+} from './audio.mjs';
 
 const root = document.querySelector('#game');
 const announcement = document.querySelector('#announcement');
+const soundToggle = document.querySelector('#sound-toggle');
+const soundLabel = soundToggle.querySelector('[data-sound-label]');
 const storageKey = 'youre-next-survival-runs';
+const soundStorageKey = 'youre-next-survival-sound';
 
 function storedRuns() {
   try { return Number(window.localStorage.getItem(storageKey)) || 0; }
@@ -26,6 +33,17 @@ let state = createGameState({ variant: variantForRun(runCount) });
 let view = 'cover';
 let pendingResult = false;
 let locked = false;
+let soundEnabled = (() => {
+  try { return normalizeSoundPreference(window.localStorage.getItem(soundStorageKey)); }
+  catch { return true; }
+})();
+const score = createOminousScore({ enabled: soundEnabled });
+
+function updateSoundControl() {
+  soundToggle.setAttribute('aria-pressed', String(soundEnabled));
+  soundLabel.textContent = soundEnabled ? 'SOUND ON' : 'SOUND OFF';
+  soundToggle.title = soundEnabled ? 'Turn ominous score off' : 'Turn ominous score on';
+}
 
 function announce(message) {
   announcement.textContent = '';
@@ -51,6 +69,7 @@ function coverTemplate() {
           <span>This game does not award competence for enthusiasm. You will have to earn it.</span>
         </div>
         <button class="primary" type="button" data-action="start">ENTER THE HOUSE <span aria-hidden="true">→</span></button>
+        <p class="sound-note"><span aria-hidden="true">◖))</span> Headphones recommended. The house is listening.</p>
         <p class="fine-print">Seven decisions. Approximately five minutes. Spoilers, naturally.</p>
       </div>
     </section>`;
@@ -164,10 +183,12 @@ root.addEventListener('click', (event) => {
   if (button.dataset.choice) {
     locked = true;
     button.classList.add('selected');
+    score.impact();
     const nextState = choose(state, button.dataset.choice);
     const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 340;
     window.setTimeout(() => {
       state = nextState;
+      score.setScene(state.history.length);
       pendingResult = state.view === 'result';
       view = 'consequence';
       locked = false;
@@ -179,12 +200,15 @@ root.addEventListener('click', (event) => {
 
   switch (button.dataset.action) {
     case 'start':
+      score.start();
+      score.setScene(0);
       view = 'scene';
       render();
       announce('Scene 1 of 7.');
       break;
     case 'continue':
       view = pendingResult ? 'result' : 'scene';
+      if (pendingResult) score.end(evaluateRun(state).slug);
       render();
       announce(pendingResult ? `Your verdict is ${evaluateRun(state).title}.` : `Scene ${state.history.length + 1} of 7.`);
       break;
@@ -192,6 +216,7 @@ root.addEventListener('click', (event) => {
       runCount += 1;
       try { window.localStorage.setItem(storageKey, String(runCount)); } catch { /* private mode */ }
       state = createGameState({ variant: variantForRun(runCount) });
+      score.reset();
       pendingResult = false;
       view = 'scene';
       render();
@@ -203,5 +228,22 @@ root.addEventListener('click', (event) => {
   }
 });
 
-render({ focus: false });
+soundToggle.addEventListener('click', async () => {
+  soundEnabled = !soundEnabled;
+  try { window.localStorage.setItem(soundStorageKey, soundEnabled ? 'on' : 'off'); } catch { /* private mode */ }
+  await score.setEnabled(soundEnabled);
+  if (soundEnabled && view !== 'cover' && !score.isStarted()) {
+    await score.start();
+    score.setScene(state.history.length);
+  }
+  updateSoundControl();
+  announce(soundEnabled ? 'Ominous score on.' : 'Ominous score off.');
+});
 
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) score.pause();
+  else score.resume();
+});
+
+updateSoundControl();
+render({ focus: false });

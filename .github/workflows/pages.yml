@@ -29,6 +29,7 @@ jobs:
           node --check quizzes/youre-next-couple/assets/app.mjs
           node --check quizzes/youre-next-couple/assets/quiz.mjs
           node --check quizzes/youre-next-survival/assets/app.mjs
+          node --check quizzes/youre-next-survival/assets/audio.mjs
           node --check quizzes/youre-next-survival/assets/game.mjs
 
   deploy:
