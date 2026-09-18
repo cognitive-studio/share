@@ -34,6 +34,7 @@ h1 em { color: var(--purple); font-style: normal; text-shadow: 4px 4px 0 var(--c
 .section-heading h2 { margin: 0; font-size: clamp(1.8rem, 5vw, 3rem); }
 .section-heading span { font-size: .65rem; font-weight: 900; letter-spacing: .1em; text-align: right; }
 .quiz-card { display: grid; grid-template-columns: .82fr 1.18fr; min-height: 440px; border: var(--border); background: white; box-shadow: var(--shadow); text-decoration: none; transition: transform .18s ease, box-shadow .18s ease; }
+.quiz-card + .quiz-card { margin-top: 2rem; }
 .quiz-card:hover { transform: translate(-3px, -3px); box-shadow: 12px 12px 0 var(--ink); }
 .card-art { position: relative; display: grid; place-items: center; overflow: hidden; border-right: var(--border); background: var(--cyan); }
 .card-art::before { content: ''; position: absolute; width: 340px; aspect-ratio: 1; border: var(--border); border-radius: 50%; background: var(--yellow); box-shadow: 10px 10px 0 var(--pink); }
@@ -50,6 +51,21 @@ h1 em { color: var(--purple); font-style: normal; text-shadow: 4px 4px 0 var(--c
 .launch { display: inline-flex; align-items: center; gap: .8rem; margin-top: 1.5rem; padding: .85rem 1rem; border: var(--border); background: var(--pink); color: white; box-shadow: 5px 5px 0 var(--ink); font-weight: 900; letter-spacing: .04em; }
 .launch b { font-size: 1.35rem; }
 
+.survival-card { background: #121211; color: #e8e0cc; }
+.survival-art { border-color: var(--ink); background: #0b0b0a; }
+.survival-art::before { border-color: #4c4840; background: #171715; box-shadow: 10px 10px 0 #71151a; }
+.survival-mask { position: absolute; z-index: 2; width: 145px; aspect-ratio: .78; display: grid; place-items: center; border: 2px solid #877f6f; border-radius: 48% 48% 42% 42% / 38% 38% 55% 55%; background: linear-gradient(145deg, #eee4cc, #8c8577); color: #181715; font-family: Georgia, serif; font-size: .65rem; font-weight: 900; letter-spacing: .14em; box-shadow: 10px 18px 35px rgb(0 0 0 / .65); }
+.survival-mask::before, .survival-mask::after { content: ''; position: absolute; top: 38%; width: 24%; height: 10%; border-radius: 50%; background: #0b0b0a; }
+.survival-mask::before { left: 16%; transform: rotate(12deg); }
+.survival-mask::after { right: 16%; transform: rotate(-12deg); }
+.survival-mask-one { z-index: 3; transform: translate(-38px, -12px) rotate(-7deg); }
+.survival-mask-two { transform: translate(55px, 24px) rotate(11deg) scale(.88); filter: brightness(.6); }
+.blood-line { position: absolute; z-index: 4; width: 120px; height: 5px; background: #a51d23; transform: rotate(-19deg); box-shadow: 0 12px 0 #611216; }
+.survival-copy .category { background: #b88b3d; color: #111; }
+.survival-copy h3 em { color: #d1262e; }
+.survival-copy p { color: #bcb4a4; }
+.survival-copy .launch { background: #e5deca; color: #111; }
+
 .coming-soon { display: flex; align-items: center; gap: 1rem; margin-top: 2.5rem; padding: 1.25rem; border-left: 8px solid var(--purple); background: white; }
 .coming-soon > span { font-size: 2rem; }
 .coming-soon strong { display: block; margin-bottom: .25rem; }
@@ -65,6 +81,7 @@ footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1.3r
   .card-art { min-height: 290px; border-right: 0; border-bottom: var(--border); }
   .card-art::before { width: 240px; }
   .mask { width: 105px; font-size: 3.4rem; }
+  .survival-mask { width: 112px; }
   .card-copy { padding: 1.5rem; }
   footer { flex-direction: column; }
 }
