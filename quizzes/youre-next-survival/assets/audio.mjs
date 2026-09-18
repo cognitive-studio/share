@@ -1,5 +1,19 @@
 const MAX_SCENE = 7;
-const MASTER_LEVEL = 0.075;
+const OPENING_MIX = Object.freeze({
+  masterGain: 0.32,
+  droneGain: 0.1,
+  lowDroneFrequency: 36.71,
+  audibleDroneFrequency: 103.83,
+  pulseGain: 0.035,
+});
+const MASTER_LEVEL = OPENING_MIX.masterGain;
+
+export function openingMixProfile() {
+  return {
+    ...OPENING_MIX,
+    effectiveDroneGain: Number((OPENING_MIX.masterGain * OPENING_MIX.droneGain).toFixed(4)),
+  };
+}
 
 export function scoreProfileForScene(sceneProgress) {
   const numeric = Number(sceneProgress);
@@ -89,9 +103,9 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     noiseFilter.Q.value = 0.7;
 
     droneA.type = 'sine';
-    droneA.frequency.value = 36.71;
+    droneA.frequency.value = OPENING_MIX.lowDroneFrequency;
     droneB.type = 'sawtooth';
-    droneB.frequency.value = 51.91;
+    droneB.frequency.value = OPENING_MIX.audibleDroneFrequency;
     droneB.detune.value = -7;
     dissonance.type = 'triangle';
     dissonance.frequency.value = 74.2;
@@ -100,9 +114,9 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     pulseLfo.type = 'sine';
     pulseLfo.frequency.value = profile.pulseRate;
 
-    droneGain.gain.value = 0.025;
+    droneGain.gain.value = OPENING_MIX.droneGain;
     dissonanceGain.gain.value = profile.dissonance;
-    pulseGain.gain.value = 0.012;
+    pulseGain.gain.value = OPENING_MIX.pulseGain;
     pulseDepth.gain.value = 0.008;
     noiseGain.gain.value = profile.noise;
     noise.buffer = createNoiseBuffer(context);
@@ -205,7 +219,7 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     setValue(nodes.dissonanceGain.gain, 0.0001, now, 2.2);
     setValue(nodes.noiseGain.gain, 0.0001, now, 2.8);
     setValue(nodes.filter.frequency, ending.mode === 'controlled-triumph' ? 520 : 300, now, 2.4);
-    setValue(nodes.master.gain, ending.mode === 'controlled-triumph' ? 0.085 : 0.045, now, 2.4);
+    setValue(nodes.master.gain, ending.mode === 'controlled-triumph' ? 0.24 : 0.14, now, 2.4);
     endingTone(ending.finalFrequency, 0.3, ending.fadeSeconds);
     return ending;
   }
@@ -270,4 +284,3 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     currentProfile: () => profile,
   };
 }
-
