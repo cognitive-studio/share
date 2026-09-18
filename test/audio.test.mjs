@@ -4,9 +4,18 @@ import {
   scoreProfileForScene,
   openingMixProfile,
   testSignalProfile,
+  soundtrackProfileForScene,
   endingProfile,
   normalizeSoundPreference,
 } from '../quizzes/youre-next-survival/assets/audio.mjs';
+
+test('soundtrack gains urgency without turning into novelty-speed music', () => {
+  const opening = soundtrackProfileForScene(0);
+  const finale = soundtrackProfileForScene(7);
+  assert.ok(finale.volume > opening.volume);
+  assert.ok(finale.playbackRate > opening.playbackRate);
+  assert.ok(finale.playbackRate <= 1.08);
+});
 
 test('diagnostic signal is unmistakable on ordinary speakers', () => {
   const signal = testSignalProfile();
@@ -15,9 +24,10 @@ test('diagnostic signal is unmistakable on ordinary speakers', () => {
   assert.ok(signal.duration >= 0.9);
 });
 
-test('opening score is audible on ordinary laptop and phone speakers', () => {
+test('opening drone remains audible but sits beneath the cinematic score', () => {
   const mix = openingMixProfile();
-  assert.ok(mix.effectiveDroneGain >= 0.025, `effective drone gain ${mix.effectiveDroneGain} is too quiet`);
+  assert.ok(mix.effectiveDroneGain >= 0.01, `effective drone gain ${mix.effectiveDroneGain} is too quiet`);
+  assert.ok(mix.effectiveDroneGain <= 0.018, `effective drone gain ${mix.effectiveDroneGain} will overpower the soundtrack`);
   assert.ok(mix.audibleDroneFrequency >= 90, `audible drone frequency ${mix.audibleDroneFrequency} is too low`);
 });
 

@@ -1,7 +1,7 @@
 const MAX_SCENE = 7;
 const OPENING_MIX = Object.freeze({
   masterGain: 0.32,
-  droneGain: 0.1,
+  droneGain: 0.045,
   lowDroneFrequency: 36.71,
   audibleDroneFrequency: 103.83,
   pulseGain: 0.035,
@@ -41,6 +41,15 @@ export function scoreProfileForScene(sceneProgress) {
   };
 }
 
+export function soundtrackProfileForScene(sceneProgress) {
+  const numeric = Number(sceneProgress);
+  const safe = Number.isFinite(numeric) ? Math.min(MAX_SCENE, Math.max(0, numeric)) : 0;
+  return {
+    volume: Number((0.34 + (safe / MAX_SCENE) * 0.18).toFixed(3)),
+    playbackRate: Number((0.98 + (safe / MAX_SCENE) * 0.07).toFixed(3)),
+  };
+}
+
 const endingProfiles = {
   'baptised-by-fire': { mode: 'controlled-triumph', fadeSeconds: 5.5, finalFrequency: 73.42 },
   'did-not-make-it': { mode: 'hard-cut', fadeSeconds: 0.12, finalFrequency: null },
@@ -62,6 +71,11 @@ function defaultAudioContext() {
   return window.AudioContext ?? window.webkitAudioContext ?? null;
 }
 
+function defaultAudioElement() {
+  if (typeof window === 'undefined') return null;
+  return window.Audio ?? null;
+}
+
 function setValue(parameter, value, now, duration = 0.8) {
   parameter.cancelScheduledValues(now);
   parameter.setValueAtTime(Math.max(0.0001, parameter.value || 0.0001), now);
@@ -76,13 +90,29 @@ function createNoiseBuffer(context) {
   return buffer;
 }
 
-export function createOminousScore({ AudioContextCtor = defaultAudioContext(), enabled = true } = {}) {
+export function createOminousScore({
+  AudioContextCtor = defaultAudioContext(),
+  AudioCtor = defaultAudioElement(),
+  soundtrackUrl = null,
+  enabled = true,
+} = {}) {
   let context = null;
   let nodes = null;
+  let soundtrack = null;
   let started = false;
   let destroyed = false;
   let soundEnabled = Boolean(enabled);
   let profile = scoreProfileForScene(0);
+  let soundtrackProfile = soundtrackProfileForScene(0);
+
+  function buildSoundtrack() {
+    if (!AudioCtor || !soundtrackUrl || soundtrack) return;
+    soundtrack = new AudioCtor(soundtrackUrl);
+    soundtrack.loop = true;
+    soundtrack.preload = 'auto';
+    soundtrack.volume = soundtrackProfile.volume;
+    soundtrack.playbackRate = soundtrackProfile.playbackRate;
+  }
 
   function buildGraph() {
     context = new AudioContextCtor();
@@ -158,14 +188,18 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
   async function start() {
     if (destroyed || !soundEnabled || started || !AudioContextCtor) return false;
     buildGraph();
+    buildSoundtrack();
     started = true;
+    const soundtrackPlayback = soundtrack ? soundtrack.play().catch(() => false) : Promise.resolve(false);
     if (context.state === 'suspended') await context.resume();
     setValue(nodes.master.gain, MASTER_LEVEL, context.currentTime, 2.6);
+    await soundtrackPlayback;
     return true;
   }
 
   function setScene(sceneProgress) {
     profile = scoreProfileForScene(sceneProgress);
+    soundtrackProfile = soundtrackProfileForScene(sceneProgress);
     if (!started || destroyed) return profile;
     const now = context.currentTime;
     setValue(nodes.filter.frequency, profile.filterFrequency, now, 1.3);
@@ -173,6 +207,10 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     setValue(nodes.noiseGain.gain, profile.noise, now, 1.1);
     setValue(nodes.pulseLfo.frequency, profile.pulseRate, now, 1.4);
     setValue(nodes.pulseDepth.gain, 0.007 + profile.intensity * 0.009, now, 1.2);
+    if (soundtrack) {
+      soundtrack.volume = soundtrackProfile.volume;
+      soundtrack.playbackRate = soundtrackProfile.playbackRate;
+    }
     return profile;
   }
 
@@ -249,10 +287,12 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     const now = context.currentTime;
     if (ending.mode === 'hard-cut') {
       setValue(nodes.master.gain, 0.0001, now, ending.fadeSeconds);
+      if (soundtrack) { soundtrack.pause(); soundtrack.currentTime = 0; }
       return ending;
     }
     if (ending.mode === 'last-note') {
       setValue(nodes.master.gain, 0.0001, now, ending.fadeSeconds);
+      if (soundtrack) soundtrack.volume = 0.08;
       endingTone(ending.finalFrequency, ending.fadeSeconds + 0.35, 6.5, true);
       return ending;
     }
@@ -260,6 +300,7 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     setValue(nodes.noiseGain.gain, 0.0001, now, 2.8);
     setValue(nodes.filter.frequency, ending.mode === 'controlled-triumph' ? 520 : 300, now, 2.4);
     setValue(nodes.master.gain, ending.mode === 'controlled-triumph' ? 0.24 : 0.14, now, 2.4);
+    if (soundtrack) soundtrack.volume = ending.mode === 'controlled-triumph' ? 0.32 : 0.18;
     endingTone(ending.finalFrequency, 0.3, ending.fadeSeconds);
     return ending;
   }
@@ -270,24 +311,31 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     if (soundEnabled) {
       await context.resume();
       setValue(nodes.master.gain, MASTER_LEVEL, context.currentTime, 0.45);
+      if (soundtrack) await soundtrack.play().catch(() => false);
     } else {
       nodes.master.gain.cancelScheduledValues(context.currentTime);
       nodes.master.gain.setValueAtTime(0.0001, context.currentTime);
+      if (soundtrack) soundtrack.pause();
       await context.suspend();
     }
     return soundEnabled;
   }
 
   async function pause() {
+    if (soundtrack) soundtrack.pause();
     if (started && !destroyed && context.state === 'running') await context.suspend();
   }
 
   async function resume() {
-    if (started && !destroyed && soundEnabled && context.state === 'suspended') await context.resume();
+    if (started && !destroyed && soundEnabled && context.state === 'suspended') {
+      await context.resume();
+      if (soundtrack) await soundtrack.play().catch(() => false);
+    }
   }
 
   function reset() {
     profile = scoreProfileForScene(0);
+    soundtrackProfile = soundtrackProfileForScene(0);
     if (!started || destroyed) return profile;
     const now = context.currentTime;
     setValue(nodes.master.gain, MASTER_LEVEL, now, 1.2);
@@ -295,12 +343,23 @@ export function createOminousScore({ AudioContextCtor = defaultAudioContext(), e
     setValue(nodes.noiseGain.gain, profile.noise, now, 1.1);
     setValue(nodes.filter.frequency, profile.filterFrequency, now, 1.1);
     setValue(nodes.pulseLfo.frequency, profile.pulseRate, now, 1.1);
+    if (soundtrack) {
+      soundtrack.currentTime = 0;
+      soundtrack.volume = soundtrackProfile.volume;
+      soundtrack.playbackRate = soundtrackProfile.playbackRate;
+      if (soundEnabled) soundtrack.play().catch(() => false);
+    }
     return profile;
   }
 
   async function destroy() {
     if (!started || destroyed) return;
     destroyed = true;
+    if (soundtrack) {
+      soundtrack.pause();
+      soundtrack.removeAttribute?.('src');
+      soundtrack.load?.();
+    }
     Object.values(nodes).forEach((node) => {
       if (typeof node.stop === 'function') {
         try { node.stop(); } catch { /* already stopped */ }

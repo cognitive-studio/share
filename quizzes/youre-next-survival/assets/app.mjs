@@ -37,7 +37,8 @@ let soundEnabled = (() => {
   try { return normalizeSoundPreference(window.localStorage.getItem(soundStorageKey)); }
   catch { return true; }
 })();
-const score = createOminousScore({ enabled: soundEnabled });
+const soundtrackUrl = new URL('./house-score.mp3', import.meta.url).href;
+const score = createOminousScore({ enabled: soundEnabled, soundtrackUrl });
 
 function updateSoundControl() {
   soundToggle.setAttribute('aria-pressed', String(soundEnabled));
