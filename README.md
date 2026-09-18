@@ -6,6 +6,7 @@ Public, self-contained quizzes for movies, television, relationships, and other 
 
 - Collection: https://cognitive-studio.github.io/share/
 - *Which You're Next Couple Are You?*: https://cognitive-studio.github.io/share/quizzes/youre-next-couple/
+- *Can You Survive You're Next?*: https://cognitive-studio.github.io/share/quizzes/youre-next-survival/
 
 ## Repository structure
 
