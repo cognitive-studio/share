@@ -19,18 +19,23 @@ const publishedPages = [
   'index.html',
   'quizzes/youre-next-couple/index.html',
   'quizzes/youre-next-survival/index.html',
+  'games/siren-shore/index.html',
 ];
 
-test('collection shelf launches both published routes', () => {
+test('collection shelf launches all published routes', () => {
   const shelf = read('index.html');
   assert.match(shelf, /href=["']\.\/quizzes\/youre-next-couple\/["']/);
   assert.match(shelf, /href=["']\.\/quizzes\/youre-next-survival\/["']/);
+  assert.match(shelf, /href=["']\.\/games\/siren-shore\/["']/);
+  assert.match(shelf, /03 EXPERIENCES/);
+  assert.match(shelf, /games, quizzes, and highly specific nonsense/i);
 });
 
 test('quiz entrypoints and Pages workflow exist', () => {
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-couple/index.html')), true);
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/index.html')), true);
   assert.equal(existsSync(resolve(root, '.github/workflows/pages.yml')), true);
+  assert.equal(existsSync(resolve(root, 'games/siren-shore/index.html')), true);
 });
 
 test('survival game exposes a self-contained sound control and score module', () => {
@@ -81,7 +86,7 @@ test('published pages do not depend on remote assets', () => {
 });
 
 test('every published quiz exposes the shared quiz-link control', () => {
-  for (const path of publishedPages.slice(1)) {
+  for (const path of publishedPages.filter((path) => path.startsWith('quizzes/'))) {
     const html = read(path);
     assert.match(html, /data-share-quiz/);
     assert.match(html, /\.\.\/\.\.\/assets\/share\.mjs/);

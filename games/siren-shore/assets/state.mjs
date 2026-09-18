@@ -1,0 +1,101 @@
+import { NPC_DEFINITIONS, generateShore } from './data.mjs';
+
+export const SAVE_KEY = 'siren-shore:save:v2';
+export const SAVE_VERSION = 2;
+
+export function xpForLevel(level) {
+  const safeLevel = Math.max(1, Math.floor(Number(level) || 1));
+  return Math.min(Number.MAX_SAFE_INTEGER, (safeLevel - 1) ** 2 * 100);
+}
+
+export function levelForXp(xp) {
+  const safeXp = Math.max(0, Math.floor(Number(xp) || 0));
+  return Math.floor(Math.sqrt(safeXp / 100)) + 1;
+}
+
+export function createDefaultState(random = Math.random) {
+  const npcs = Object.fromEntries(NPC_DEFINITIONS.map((npc) => [npc.id, {
+    ...npc,
+    friendship: 0,
+    rivalry: 0,
+    cattiness: 1,
+    power: 1,
+    wins: 0,
+    losses: 0,
+    possessions: [],
+    memories: [],
+  }]));
+  return {
+    version: SAVE_VERSION,
+    player: {
+      id: 'player',
+      name: 'Your Majesty',
+      title: 'Unaccredited Mermaid',
+      hair: 0,
+      tail: 0,
+      makeup: 0,
+      purse: 'weekender',
+      x: 600,
+      y: 500,
+    },
+    inventory: [],
+    purseIds: [],
+    equipped: {},
+    npcs,
+    shore: generateShore(random, 1),
+    progression: { xp: 0, level: 1, shores: 0, finds: 0, incidents: 0 },
+    settings: { music: true, effects: true, reducedMotion: false },
+    counters: { item: 0, incident: 0, shore: 0 },
+    mode: 'home',
+    lastIncident: null,
+  };
+}
+
+export function nextId(state, prefix) {
+  state.counters[prefix] = (state.counters[prefix] || 0) + 1;
+  return `${prefix}-${state.counters[prefix]}`;
+}
+
+function migrate(candidate) {
+  const base = createDefaultState(() => 0.5);
+  if (!candidate || typeof candidate !== 'object') return base;
+  const merged = {
+    ...base,
+    ...candidate,
+    version: SAVE_VERSION,
+    player: { ...base.player, ...(candidate.player || {}) },
+    progression: { ...base.progression, ...(candidate.progression || {}) },
+    settings: { ...base.settings, ...(candidate.settings || {}) },
+    counters: { ...base.counters, ...(candidate.counters || {}) },
+    npcs: { ...base.npcs, ...(candidate.npcs || {}) },
+    inventory: Array.isArray(candidate.inventory) ? candidate.inventory : [],
+    purseIds: Array.isArray(candidate.purseIds) ? candidate.purseIds : [],
+    equipped: candidate.equipped && typeof candidate.equipped === 'object' ? candidate.equipped : {},
+  };
+  merged.progression.level = levelForXp(merged.progression.xp);
+  return merged;
+}
+
+export function loadState(storage = globalThis.localStorage, now = Date.now) {
+  try {
+    const raw = storage?.getItem(SAVE_KEY);
+    if (!raw) return { state: createDefaultState(), warning: null, recovered: false };
+    try {
+      return { state: migrate(JSON.parse(raw)), warning: null, recovered: false };
+    } catch {
+      storage?.setItem(`siren-shore:recovery:${now()}`, raw);
+      return { state: createDefaultState(), warning: 'Your previous tide was damaged. We recovered what we could and preserved the wreckage.', recovered: true };
+    }
+  } catch {
+    return { state: createDefaultState(), warning: 'This browser declined storage. You can still play, but this particular scandal will not survive closing the tab.', recovered: false };
+  }
+}
+
+export function saveState(storage = globalThis.localStorage, state) {
+  try {
+    storage?.setItem(SAVE_KEY, JSON.stringify({ ...state, version: SAVE_VERSION }));
+    return { ok: true, warning: null };
+  } catch {
+    return { ok: false, warning: 'This browser declined storage. The current session remains playable.' };
+  }
+}

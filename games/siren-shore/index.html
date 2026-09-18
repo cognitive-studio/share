@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+    <meta name="theme-color" content="#071a35">
+    <meta name="description" content="Swim. Find gorgeous garbage. Keep it forever. Become increasingly impossible.">
+    <meta property="og:title" content="Siren Shore">
+    <meta property="og:description" content="An endless mermaid collecting game with completely optional drama.">
+    <title>Siren Shore — Collect Forever</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="stylesheet" href="./assets/styles.css">
+  </head>
+  <body>
+    <main id="game" class="game" data-mode="home">
+      <canvas id="ocean-canvas" aria-label="The explorable ocean"></canvas>
+      <div class="scanlines" aria-hidden="true"></div>
+
+      <header id="hud" class="hud">
+        <div><span class="eyebrow" id="shore-label">PRIVATE GROTTO</span><strong id="player-title">UNACCREDITED MERMAID</strong></div>
+        <div class="level-chip"><span>SIREN</span><b id="level-value">01</b></div>
+      </header>
+
+      <div class="xp-track" aria-label="Legend progress"><span id="xp-fill"></span></div>
+      <output id="toast" class="toast" aria-live="polite">Everything here is safe. Nobody gets a vote.</output>
+      <div id="live-region" class="sr-only" aria-live="polite"></div>
+
+      <section id="home-actions" class="home-actions" aria-label="Grotto actions">
+        <span class="issue">SIREN SHORE · ISSUE 001</span>
+        <h1>Become<br><em>increasingly impossible.</em></h1>
+        <p>Swim. Find gorgeous garbage. Keep it forever. Meet a bitch. Decide whether today is peaceful.</p>
+        <div class="home-buttons">
+          <button type="button" data-open="home-sheet">CUSTOMIZE</button>
+          <button type="button" data-open="inventory-sheet">PACK PURSE</button>
+          <button type="button" id="enter-ocean" class="primary">ENTER THE OCEAN <span>→</span></button>
+        </div>
+      </section>
+
+      <section id="ocean-controls" class="ocean-controls" aria-label="Swimming controls" hidden>
+        <div id="move-pad" class="move-pad" role="group" aria-label="Swim direction">
+          <span class="pad-ring"></span><span id="move-knob" class="move-knob"></span>
+        </div>
+        <button type="button" id="action-button" class="action-button"><span id="action-label">LOOK</span><small>NEARBY</small></button>
+      </section>
+
+      <nav class="tabbar" aria-label="Siren actions">
+        <button type="button" data-tab="home"><span>⌂</span>GROTTO</button>
+        <button type="button" data-open="inventory-sheet"><span>◈</span>THINGS</button>
+        <button type="button" data-open="share-sheet"><span>◇</span>RECEIPT</button>
+        <button type="button" data-open="settings-sheet"><span>⚙</span>MORE</button>
+      </nav>
+
+      <div class="sheet-backdrop" data-close-sheets hidden></div>
+
+      <section id="home-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="look-title" hidden>
+        <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
+        <span class="kicker">CURRENTLY SERVING</span><h2 id="look-title">The Look</h2>
+        <div class="portrait-wrap"><canvas id="portrait-canvas" width="320" height="260"></canvas></div>
+        <label>HAIR<select id="hair-select"></select></label>
+        <label>TAIL<select id="tail-select"></select></label>
+        <label>FACE<select id="makeup-select"></select></label>
+        <label>PURSE<select id="purse-select"></select></label>
+        <button type="button" class="primary full" data-close-sheets>IT HAS BEEN DECIDED</button>
+      </section>
+
+      <section id="inventory-sheet" class="sheet tall" role="dialog" aria-modal="true" aria-labelledby="things-title" hidden>
+        <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
+        <span class="kicker">POSSESSIONS & ALLEGATIONS</span><h2 id="things-title">Your Things</h2>
+        <div class="inventory-summary"><b id="inventory-count">0 OBJECTS</b><span id="purse-count">PURSE 0/6</span></div>
+        <div id="inventory-list" class="inventory-list"></div>
+        <div id="item-actions" class="item-actions" hidden>
+          <button type="button" id="equip-item">WEAR IT</button>
+          <button type="button" id="pack-item">PACK IT</button>
+          <button type="button" id="remix-item">REMIX PAIR</button>
+        </div>
+        <article id="provenance" class="provenance"><p>You own nothing yet. This will not stand.</p></article>
+      </section>
+
+      <section id="encounter-sheet" class="sheet encounter" role="dialog" aria-modal="true" aria-labelledby="encounter-title" hidden>
+        <button class="sheet-close" type="button" data-encounter="leave" aria-label="Leave">×</button>
+        <span class="kicker">UNSCHEDULED MERMAID</span><h2 id="encounter-title">Someone Has Arrived</h2>
+        <div id="npc-card" class="npc-card"></div>
+        <p id="encounter-copy"></p>
+        <div id="encounter-actions" class="choice-grid">
+          <button type="button" data-encounter="compliment">COMPLIMENT<small>disarming</small></button>
+          <button type="button" data-encounter="trade">TRADE<small>civilized-ish</small></button>
+          <button type="button" data-encounter="shade">THROW SHADE<small>free speech</small></button>
+          <button type="button" data-encounter="snatch">SNATCH<small>property law</small></button>
+          <button type="button" data-encounter="fight">ESCALATE<small>nonlethally</small></button>
+          <button type="button" data-encounter="leave">LEAVE<small>still a complete life</small></button>
+        </div>
+        <div id="fight-actions" class="fight-actions" hidden>
+          <button type="button" data-fight="snatch">SNATCH</button>
+          <button type="button" data-fight="read">READ</button>
+          <button type="button" data-fight="flourish">FLOURISH</button>
+          <div id="fight-score">YOU 0 · HER 0</div>
+        </div>
+      </section>
+
+      <section id="share-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="share-title" hidden>
+        <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
+        <span class="kicker">THE OCEAN KEEPS RECEIPTS</span><h2 id="share-title">Siren Receipt</h2>
+        <canvas id="receipt-canvas" width="540" height="675" aria-label="Preview of your Siren Receipt"></canvas>
+        <button type="button" id="share-receipt" class="primary full">SHARE THE ALLEGATION</button>
+        <p id="share-status" class="fineprint">Luxury image. Disgraceful caption. No save data leaves this device.</p>
+      </section>
+
+      <section id="settings-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+        <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
+        <span class="kicker">HOUSE RULES</span><h2 id="settings-title">More</h2>
+        <label class="toggle"><span><b>MUSIC</b><small>camp aquatic score</small></span><input id="music-toggle" type="checkbox" checked></label>
+        <label class="toggle"><span><b>GET THE EFFECTS</b><small>snaps, finds, reads, consequences</small></span><input id="effects-toggle" type="checkbox" checked></label>
+        <button type="button" id="new-shore">GENERATE ANOTHER SHORE</button>
+        <button type="button" id="return-home">RETURN TO THE GROTTO</button>
+        <button type="button" id="reset-game" class="danger">ERASE THIS ENTIRE SOCIAL HISTORY</button>
+        <a class="back-link" href="../../">← THE SHARE SHELF</a>
+      </section>
+
+      <section id="audio-gate" class="audio-gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+        <div class="gate-crown" aria-hidden="true">♛</div>
+        <span class="issue">COGNITIVE STUDIO PRESENTS</span>
+        <h1 id="gate-title">SIREN<br><em>SHORE</em></h1>
+        <p>Mindless mermaid drag-queen drama nonsense for however long you want to play.</p>
+        <button type="button" id="begin-game" class="primary">BEGIN BEING A MERMAID</button>
+        <small>Sound begins after you touch this, because even the ocean has browser policy.</small>
+      </section>
+    </main>
+    <noscript>Siren Shore requires JavaScript. The ocean regrets this administrative constraint.</noscript>
+    <script type="module" src="./assets/app.mjs"></script>
+  </body>
+</html>

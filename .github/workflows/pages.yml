@@ -1,4 +1,4 @@
-name: Publish quiz collection
+name: Publish Share collection
 
 on:
   push:
@@ -24,13 +24,22 @@ jobs:
           node-version: 24
       - name: Run collection tests
         run: node --test test/*.test.mjs
-      - name: Check quiz JavaScript
+      - name: Check experience JavaScript
         run: |
           node --check quizzes/youre-next-couple/assets/app.mjs
           node --check quizzes/youre-next-couple/assets/quiz.mjs
           node --check quizzes/youre-next-survival/assets/app.mjs
           node --check quizzes/youre-next-survival/assets/audio.mjs
           node --check quizzes/youre-next-survival/assets/game.mjs
+          node --check games/siren-shore/assets/data.mjs
+          node --check games/siren-shore/assets/state.mjs
+          node --check games/siren-shore/assets/game.mjs
+          node --check games/siren-shore/assets/render.mjs
+          node --check games/siren-shore/assets/audio.mjs
+          node --check games/siren-shore/assets/share.mjs
+          node --check games/siren-shore/assets/app.mjs
+      - name: Validate Siren Shore score
+        run: python3 scripts/generate_siren_score.py --check
 
   deploy:
     needs: validate
