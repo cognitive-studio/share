@@ -104,6 +104,14 @@ function sceneTemplate() {
                 <i aria-hidden="true">→</i>
               </button>`).join('')}
           </div>
+          ${state.history.length === 0 ? `
+            <div class="sound-check">
+              <button class="sound-test" type="button" data-action="test-sound">
+                <span class="sound-test-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+                <span>TEST SOUND</span>
+              </button>
+              <small>Three clear tones. This does not affect your case.</small>
+            </div>` : ''}
         </article>
       </div>
       <p class="lock-note">Your decision becomes part of the case. There is no back button.</p>
@@ -176,6 +184,20 @@ async function shareResult(button) {
   }
 }
 
+async function runSoundTest(button) {
+  const label = button.querySelector('span:last-child');
+  button.disabled = true;
+  label.textContent = 'PLAYING…';
+  let outcome;
+  try { outcome = await score.testSound(); }
+  catch { outcome = { played: false, state: 'error' }; }
+  const message = outcome.played ? 'SOUND PLAYED' : 'SOUND BLOCKED';
+  label.textContent = message;
+  button.dataset.status = outcome.played ? 'played' : 'blocked';
+  button.disabled = false;
+  announce(outcome.played ? 'Sound test played three tones.' : `Sound test blocked. Audio state: ${outcome.state}.`);
+}
+
 root.addEventListener('click', (event) => {
   const button = event.target.closest('button');
   if (!button || locked) return;
@@ -199,6 +221,9 @@ root.addEventListener('click', (event) => {
   }
 
   switch (button.dataset.action) {
+    case 'test-sound':
+      runSoundTest(button);
+      break;
     case 'start':
       score.start();
       score.setScene(0);

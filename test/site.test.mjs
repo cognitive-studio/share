@@ -43,6 +43,14 @@ test('survival game exposes a self-contained sound control and score module', ()
   assert.match(workflow, /node --check quizzes\/youre-next-survival\/assets\/audio\.mjs/);
 });
 
+test('scene one exposes a diagnostic sound control without affecting a choice', () => {
+  const app = read('quizzes/youre-next-survival/assets/app.mjs');
+  assert.match(app, /data-action=["']test-sound["']/);
+  assert.match(app, /score\.testSound\(\)/);
+  assert.match(app, /SOUND PLAYED/);
+  assert.match(app, /SOUND BLOCKED/);
+});
+
 test('every local stylesheet, module, and favicon reference resolves', () => {
   for (const path of publishedPages) {
     const html = read(path);
