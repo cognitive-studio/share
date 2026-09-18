@@ -135,6 +135,16 @@ test('SNATCH READ FLOURISH resolves nonlethally and can move property', () => {
   assert.ok(state.npcs.cynthia.wins + state.npcs.cynthia.losses === 1);
 });
 
+test('an unfinished fight records the current read for an accurate receipt', () => {
+  const state = seedState();
+  state.mode = 'fight';
+  state.fight = { npcId: 'cynthia', playerScore: 0, npcScore: 0, round: 0 };
+  const result = resolveFightMove(state, 'cynthia', 'read', low);
+  assert.equal(result.state.mode, 'fight');
+  assert.equal(result.state.lastIncident.type, 'read');
+  assert.match(result.state.lastIncident.text, /Cynthia/i);
+});
+
 test('losing equipped property removes it from the public look', () => {
   let state = seedState();
   state.mode = 'ocean';

@@ -54,6 +54,7 @@ test('game modules wire rendering, touch, keyboard, resizing, audio, and receipt
   assert.doesNotMatch(app, /if \(!\(frame\+\+ % 8\)\) renderUi\(\)/);
   assert.match(app, /shouldOfferReceipt\(events\)\) offerReceipt\(\)/);
   assert.doesNotMatch(app, /shouldOfferReceipt\(events\)\) openSheet/);
+  assert.match(app, /state\.mode === 'fight'[\s\S]{0,180}openSheet\('encounter-sheet'\)/);
 });
 
 test('Siren Shore contains no remote runtime dependencies', () => {

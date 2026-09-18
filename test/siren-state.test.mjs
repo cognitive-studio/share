@@ -64,6 +64,20 @@ test('schema-invalid parsed saves are preserved and replaced safely', () => {
   assert.ok(loaded.state.shore.name);
 });
 
+test('invalid nested save entries and orphaned fights recover safely', () => {
+  for (const candidate of [
+    { version: 2, inventory: [null] },
+    { version: 2, shore: { name: 'Still Named', finds: [null] } },
+    { version: 2, mode: 'fight' },
+  ]) {
+    const storage = memoryStorage({ [SAVE_KEY]: JSON.stringify(candidate) });
+    const loaded = loadState(storage, () => 654);
+    assert.equal(loaded.recovered, true);
+    assert.equal(loaded.state.mode, 'home');
+    assert.ok(loaded.state.inventory.every(Boolean));
+  }
+});
+
 test('corrupt saves are preserved and replaced with a playable state', () => {
   const storage = memoryStorage({ 'siren-shore:save:v2': '{ruined' });
   const loaded = loadState(storage, () => 123456789);

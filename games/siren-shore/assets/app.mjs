@@ -174,7 +174,14 @@ export function bootSirenShore(root = document, windowObject = window) {
     }
   }
   function offerReceipt() { byId(root, 'receipt-offer').hidden = false; }
-  function closeSheets() { root.querySelectorAll('.sheet').forEach((sheet) => { sheet.hidden = true; });root.querySelector('.sheet-backdrop').hidden = true; }
+  function closeSheets() {
+    root.querySelectorAll('.sheet').forEach((sheet) => { sheet.hidden = true; });root.querySelector('.sheet-backdrop').hidden = true;
+    if (state.mode === 'fight' && state.fight && activeNpcId) {
+      openSheet('encounter-sheet');
+      byId(root, 'encounter-actions').hidden = true;byId(root, 'fight-actions').hidden = false;
+      byId(root, 'fight-score').textContent = `YOU ${state.fight.playerScore} · HER ${state.fight.npcScore}`;
+    }
+  }
 
   function encounter(npcId) {
     activeNpcId = npcId;

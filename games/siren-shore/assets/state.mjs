@@ -65,6 +65,9 @@ function migrate(candidate) {
   if ('player' in candidate && (!candidate.player || typeof candidate.player !== 'object')) throw new Error('Invalid player');
   if ('inventory' in candidate && !Array.isArray(candidate.inventory)) throw new Error('Invalid inventory');
   if ('npcs' in candidate && (!candidate.npcs || typeof candidate.npcs !== 'object')) throw new Error('Invalid cast');
+  if (candidate.inventory?.some((item) => !item || typeof item !== 'object' || typeof item.id !== 'string')) throw new Error('Invalid inventory item');
+  if (candidate.shore?.finds && (!Array.isArray(candidate.shore.finds) || candidate.shore.finds.some((find) => !find || typeof find !== 'object' || typeof find.id !== 'string' || !find.item))) throw new Error('Invalid shore find');
+  if (candidate.mode === 'fight' && (!candidate.fight || typeof candidate.fight !== 'object' || !candidate.fight.npcId)) throw new Error('Orphaned fight');
   const savedNpcs = candidate.npcs && typeof candidate.npcs === 'object' ? candidate.npcs : {};
   const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => [id, {
     ...npc,

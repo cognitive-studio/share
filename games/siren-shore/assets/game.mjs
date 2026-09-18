@@ -208,6 +208,7 @@ export function resolveEncounter(input, npcId, action, random = Math.random) {
       award(state, 30, 'snatch', events);
     } else {
       npc.rivalry += 2;
+      state.lastIncident = { type: 'snatch', npcId, npcName: npc.name, text: `${npc.name} stopped ${state.player.name} mid-snatch and announced the result.` };
       events.push(event('loss', `${npc.name} catches your wrist and your entire premise.`));
     }
   } else if (action === 'fight') {
@@ -229,6 +230,7 @@ export function resolveFightMove(input, npcId, move, random = Math.random) {
   if (success) fight.playerScore += 1;
   else fight.npcScore += 1;
   events.push(event(move, success ? `${move.toUpperCase()}: devastatingly legible.` : `${move.toUpperCase()}: ${npc.name} was prepared, which feels targeted.`));
+  state.lastIncident = { type: move, npcId, npcName: npc.name, text: `${state.player.name} used ${move.toUpperCase()} against ${npc.name}. ${events[0].text}` };
   state.fight = fight;
   if (fight.round >= 3) {
     const won = fight.playerScore >= fight.npcScore;
