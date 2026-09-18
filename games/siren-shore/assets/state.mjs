@@ -84,12 +84,25 @@ function migrate(candidate) {
   if (candidate.shore?.finds && (!Array.isArray(candidate.shore.finds) || candidate.shore.finds.some((find) => !find || typeof find !== 'object' || typeof find.id !== 'string' || !find.item || typeof find.item !== 'object'))) throw new Error('Invalid shore find');
   if (candidate.mode === 'fight' && (!candidate.fight || typeof candidate.fight !== 'object' || !candidate.fight.npcId)) throw new Error('Orphaned fight');
   const savedNpcs = candidate.npcs && typeof candidate.npcs === 'object' ? candidate.npcs : {};
-  const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => [id, {
-    ...npc,
-    ...(savedNpcs[id] || {}),
-    possessions: Array.isArray(savedNpcs[id]?.possessions) ? savedNpcs[id].possessions : npc.possessions,
-    memories: Array.isArray(savedNpcs[id]?.memories) ? savedNpcs[id].memories : npc.memories,
-  }]));
+  const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => {
+    const saved = savedNpcs[id] && typeof savedNpcs[id] === 'object' ? savedNpcs[id] : {};
+    return [id, {
+      ...npc,
+      ...saved,
+      name: typeof saved.name === 'string' && saved.name ? saved.name : npc.name,
+      signatureRead: typeof saved.signatureRead === 'string' ? saved.signatureRead : npc.signatureRead,
+      palette: Array.isArray(saved.palette) && saved.palette.length >= 2 ? saved.palette : npc.palette,
+      possessions: Array.isArray(saved.possessions) ? saved.possessions.filter((value) => typeof value === 'string') : npc.possessions,
+      memories: Array.isArray(saved.memories) ? saved.memories.filter((value) => value && typeof value === 'object') : npc.memories,
+      friendship: Number.isFinite(saved.friendship) ? saved.friendship : npc.friendship,
+      rivalry: Number.isFinite(saved.rivalry) ? saved.rivalry : npc.rivalry,
+      cattiness: Number.isFinite(saved.cattiness) ? saved.cattiness : npc.cattiness,
+      power: Number.isFinite(saved.power) ? saved.power : npc.power,
+      wins: Number.isFinite(saved.wins) ? saved.wins : npc.wins,
+      losses: Number.isFinite(saved.losses) ? saved.losses : npc.losses,
+    }];
+  }));
+  if (candidate.mode === 'fight' && !npcs[candidate.fight.npcId]) throw new Error('Unknown fight opponent');
   const merged = {
     ...base,
     ...candidate,

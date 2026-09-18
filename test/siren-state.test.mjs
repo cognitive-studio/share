@@ -92,6 +92,18 @@ test('partial legacy item records normalize into safe collectible objects', () =
   assert.ok(Array.isArray(loaded.state.shore.finds[0].item.history));
 });
 
+test('fight references and required NPC fields retain integrity', () => {
+  const brokenFight = memoryStorage({ [SAVE_KEY]: JSON.stringify({ version: 2, mode: 'fight', fight: { npcId: 'not-in-cast', round: 1 } }) });
+  assert.equal(loadState(brokenFight, () => 321).recovered, true);
+
+  const patchedNpc = memoryStorage({ [SAVE_KEY]: JSON.stringify({ version: 2, npcs: { cynthia: { palette: null, name: null, possessions: null } } }) });
+  const loaded = loadState(patchedNpc);
+  assert.equal(loaded.recovered, false);
+  assert.equal(loaded.state.npcs.cynthia.name, 'Cynthia Undertow');
+  assert.ok(loaded.state.npcs.cynthia.palette.length >= 2);
+  assert.deepEqual(loaded.state.npcs.cynthia.possessions, []);
+});
+
 test('corrupt saves are preserved and replaced with a playable state', () => {
   const storage = memoryStorage({ 'siren-shore:save:v2': '{ruined' });
   const loaded = loadState(storage, () => 123456789);
