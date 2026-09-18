@@ -108,7 +108,7 @@ export const scenes = [
     number: '07',
     eyebrow: 'NO MORE MASKS',
     title: 'The inside player steps forward. Everyone expects you to choose a side.',
-    body: 'The surviving intruders want payment. The family wants innocence. Erin wants a clean opening. Nobody has asked what you want.',
+    body: 'The surviving intruders want payment. The family wants innocence. Erin wants a clean opening. Prove to them that you’re on their side.',
     variantNote: { fox: 'Outside, the tree line is quiet again.', lamb: 'The front gate begins to close on its own.' },
     choices: [
       choice('expose-inside', 'Name the inside player and collapse the story.', 'A conspiracy cannot survive once every participant knows who is disposable.', 'The masks turn. The family turns. Erin does not. You kept track of the only person who mattered.', { stats: { awareness: 2, control: 2 }, flags: ['conspiracyExposed'], evidence: 'You understood the whole plan before choosing how to end it.' }, any((state) => hasFlag(state, 'insideJob'), statAtLeast('awareness', 5))),
