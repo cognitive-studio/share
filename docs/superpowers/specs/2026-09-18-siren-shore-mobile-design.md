@@ -1,7 +1,7 @@
 # Siren Shore — Mobile Public Edition Design
 
 **Date:** September 18, 2026  
-**Status:** Approved for implementation planning  
+**Status:** Design approved / ready for implementation planning  
 **Repository:** `cognitive-studio/share`  
 **Public route:** `/share/games/siren-shore/`  
 **Canonical concept source:** `cognitive-studio/aw-siren-shore`
@@ -53,6 +53,22 @@ Expected modules:
 - `assets/app.mjs` — input, view coordination, and lifecycle.
 
 The modules may be consolidated only where doing so makes behavior clearer and does not recreate the current single-file coupling.
+
+## Art direction
+
+The visual direction is **a lost Sega Saturn mermaid game remastered by drag queens**.
+
+It combines nostalgic game atmosphere with enough visual flexibility for endless self-authorship:
+
+- **Ocean world:** Ecco-era depth rendered in cobalt, teal, bruised purple, and radioactive coral, with dithered light shafts, parallax kelp, mysterious ruins, and jewel-like pickups.
+- **Mermaids:** smooth modular cel illustration, strong silhouettes, bold features, enormous hair, severe makeup, impossible tails, tiny purses, and phone-readable adornment.
+- **Motion:** economical theatrical animation rather than full cinematic animation—floating hair, swishing tails, purse snaps, weapon flourishes, dramatic turns, and expensive poses.
+- **Objects:** chunky collectible icons that look desirable before their generated descriptions reveal how indefensible they are.
+- **Interface:** glossy fashion-editorial and tabloid graphics layered over the retro ocean; sharp panels and expressive typography rather than generic translucent mobile cards.
+- **Conflict presentation:** arcade freeze frames, impact flashes, musical stings, and oversized READ, SNATCH, and FLOURISH typography.
+- **Siren Receipts:** smooth high-resolution editorial compositions using the same modular mermaid and object layers, presented like a luxury campaign photographed during a regrettable reunion episode.
+
+The ocean may evoke 16/32-bit game grammar, but the character system must not be constrained to a tiny fixed sprite catalog. Pixel-informed atmosphere and smooth modular figures belong to one coherent palette and silhouette system.
 
 ## Phone-first interaction
 
