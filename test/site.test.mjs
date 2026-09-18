@@ -51,6 +51,14 @@ test('scene one exposes a diagnostic sound control without affecting a choice', 
   assert.match(app, /SOUND BLOCKED/);
 });
 
+test('survival game loads the original cinematic score through the audio controller', () => {
+  const app = read('quizzes/youre-next-survival/assets/app.mjs');
+  const audio = read('quizzes/youre-next-survival/assets/audio.mjs');
+  assert.match(app, /house-score\.mp3/);
+  assert.match(app, /soundtrackUrl/);
+  assert.match(audio, /soundtrack\.play\(\)/);
+});
+
 test('every local stylesheet, module, and favicon reference resolves', () => {
   for (const path of publishedPages) {
     const html = read(path);
