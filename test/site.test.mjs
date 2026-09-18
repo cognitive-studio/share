@@ -36,6 +36,7 @@ test('quiz entrypoints and Pages workflow exist', () => {
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/index.html')), true);
   assert.equal(existsSync(resolve(root, '.github/workflows/pages.yml')), true);
   assert.equal(existsSync(resolve(root, 'games/siren-shore/index.html')), true);
+  assert.match(read('.github/workflows/pages.yml'), /apt-get install -y ffmpeg/);
 });
 
 test('survival game exposes a self-contained sound control and score module', () => {
