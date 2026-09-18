@@ -58,6 +58,21 @@ export function nextId(state, prefix) {
   return `${prefix}-${state.counters[prefix]}`;
 }
 
+function normalizeItem(item, fallbackId = 'recovered-object') {
+  return {
+    ...item,
+    id: typeof item.id === 'string' && item.id ? item.id : fallbackId,
+    name: typeof item.name === 'string' && item.name ? item.name : 'Object of Unclear but Growing Importance',
+    description: typeof item.description === 'string' ? item.description : 'Recovered from an earlier version of the story.',
+    category: typeof item.category === 'string' ? item.category : 'Find',
+    slot: typeof item.slot === 'string' && item.slot ? item.slot : 'treasure',
+    rarity: typeof item.rarity === 'string' ? item.rarity : 'Questionable',
+    colors: Array.isArray(item.colors) && item.colors.length >= 2 ? item.colors : ['#36e5d1', '#ff4faf'],
+    history: Array.isArray(item.history) ? item.history : [],
+    parents: Array.isArray(item.parents) ? item.parents : [],
+  };
+}
+
 function migrate(candidate) {
   const base = createDefaultState(() => 0.5);
   if (!candidate || typeof candidate !== 'object') return base;
@@ -66,7 +81,7 @@ function migrate(candidate) {
   if ('inventory' in candidate && !Array.isArray(candidate.inventory)) throw new Error('Invalid inventory');
   if ('npcs' in candidate && (!candidate.npcs || typeof candidate.npcs !== 'object')) throw new Error('Invalid cast');
   if (candidate.inventory?.some((item) => !item || typeof item !== 'object' || typeof item.id !== 'string')) throw new Error('Invalid inventory item');
-  if (candidate.shore?.finds && (!Array.isArray(candidate.shore.finds) || candidate.shore.finds.some((find) => !find || typeof find !== 'object' || typeof find.id !== 'string' || !find.item))) throw new Error('Invalid shore find');
+  if (candidate.shore?.finds && (!Array.isArray(candidate.shore.finds) || candidate.shore.finds.some((find) => !find || typeof find !== 'object' || typeof find.id !== 'string' || !find.item || typeof find.item !== 'object'))) throw new Error('Invalid shore find');
   if (candidate.mode === 'fight' && (!candidate.fight || typeof candidate.fight !== 'object' || !candidate.fight.npcId)) throw new Error('Orphaned fight');
   const savedNpcs = candidate.npcs && typeof candidate.npcs === 'object' ? candidate.npcs : {};
   const npcs = Object.fromEntries(Object.entries(base.npcs).map(([id, npc]) => [id, {
@@ -83,9 +98,13 @@ function migrate(candidate) {
     progression: { ...base.progression, ...(candidate.progression || {}) },
     settings: { ...base.settings, ...(candidate.settings || {}) },
     counters: { ...base.counters, ...(candidate.counters || {}) },
-    shore: { ...base.shore, ...(candidate.shore || {}), finds: Array.isArray(candidate.shore?.finds) ? candidate.shore.finds : base.shore.finds },
+    shore: {
+      ...base.shore,
+      ...(candidate.shore || {}),
+      finds: Array.isArray(candidate.shore?.finds) ? candidate.shore.finds.map((find) => ({ ...find, item: normalizeItem(find.item, `recovered-${find.id}`) })) : base.shore.finds,
+    },
     npcs,
-    inventory: Array.isArray(candidate.inventory) ? candidate.inventory : [],
+    inventory: Array.isArray(candidate.inventory) ? candidate.inventory.map((item) => normalizeItem(item)) : [],
     purseIds: Array.isArray(candidate.purseIds) ? candidate.purseIds : [],
     equipped: candidate.equipped && typeof candidate.equipped === 'object' ? candidate.equipped : {},
   };

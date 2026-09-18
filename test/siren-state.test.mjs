@@ -78,6 +78,20 @@ test('invalid nested save entries and orphaned fights recover safely', () => {
   }
 });
 
+test('partial legacy item records normalize into safe collectible objects', () => {
+  const storage = memoryStorage({ [SAVE_KEY]: JSON.stringify({
+    version: 2,
+    inventory: [{ id: 'x', ownerId: 'player', history: null }],
+    shore: { name: 'Still Named', finds: [{ id: 'f', x: 600, y: 500, item: {} }] },
+  }) });
+  const loaded = loadState(storage);
+  assert.equal(loaded.recovered, false);
+  assert.equal(loaded.state.inventory[0].slot, 'treasure');
+  assert.deepEqual(loaded.state.inventory[0].history, []);
+  assert.ok(loaded.state.shore.finds[0].item.name);
+  assert.ok(Array.isArray(loaded.state.shore.finds[0].item.history));
+});
+
 test('corrupt saves are preserved and replaced with a playable state', () => {
   const storage = memoryStorage({ 'siren-shore:save:v2': '{ruined' });
   const loaded = loadState(storage, () => 123456789);

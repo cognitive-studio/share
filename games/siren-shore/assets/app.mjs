@@ -55,7 +55,7 @@ export function bootSirenShore(root = document, windowObject = window) {
   let movement = { x: 0, y: 0 };
   let selectedItemId = null;
   let selectedRemixId = null;
-  let activeNpcId = null;
+  let activeNpcId = state.mode === 'fight' ? state.fight?.npcId || null : null;
   let lastTime = performance.now();
   let frame = 0;
   let animationFrameId = 0;
@@ -174,13 +174,19 @@ export function bootSirenShore(root = document, windowObject = window) {
     }
   }
   function offerReceipt() { byId(root, 'receipt-offer').hidden = false; }
+  function restoreFightSheet() {
+    if (!activeNpcId || !state.npcs[activeNpcId] || !state.fight) return;
+    const npc = state.npcs[activeNpcId];
+    const card = byId(root, 'npc-card');card.textContent = npc.name;card.style.setProperty('--npc-a', npc.palette[0]);card.style.setProperty('--npc-b', npc.palette[1]);
+    byId(root, 'encounter-title').textContent = npc.name;
+    byId(root, 'encounter-copy').textContent = state.lastIncident?.text || `${npc.name} remembers exactly where this altercation paused.`;
+    openSheet('encounter-sheet');byId(root, 'encounter-actions').hidden = true;byId(root, 'fight-actions').hidden = false;
+    byId(root, 'fight-score').textContent = `YOU ${state.fight.playerScore} · HER ${state.fight.npcScore}`;
+    audio.setScene('fight');
+  }
   function closeSheets() {
     root.querySelectorAll('.sheet').forEach((sheet) => { sheet.hidden = true; });root.querySelector('.sheet-backdrop').hidden = true;
-    if (state.mode === 'fight' && state.fight && activeNpcId) {
-      openSheet('encounter-sheet');
-      byId(root, 'encounter-actions').hidden = true;byId(root, 'fight-actions').hidden = false;
-      byId(root, 'fight-score').textContent = `YOU ${state.fight.playerScore} · HER ${state.fight.npcScore}`;
-    }
+    if (state.mode === 'fight' && state.fight && activeNpcId) restoreFightSheet();
   }
 
   function encounter(npcId) {
@@ -239,7 +245,7 @@ export function bootSirenShore(root = document, windowObject = window) {
   byId(root, 'pack-item').addEventListener('click', () => selectedItemId && transition(packItem(state, selectedItemId)));
   byId(root, 'remix-item').addEventListener('click', () => { if (!selectedRemixId) { selectedRemixId=selectedItemId;say('First ingredient selected. Choose another object.'); } else if (selectedItemId !== selectedRemixId) { transition(remixItems(state,[selectedRemixId,selectedItemId],Math.random));selectedRemixId=null;selectedItemId=null; } });
   root.querySelectorAll('[data-encounter]').forEach((button) => button.addEventListener('click', () => {
-    const action=button.dataset.encounter;if(action==='leave'){closeSheets();activeNpcId=null;audio.setScene('ocean');say('You leave with your peace intact.');return;}
+    const action=button.dataset.encounter;if(action==='leave'){if (state.mode === 'fight') transition(returnHome(state));closeSheets();activeNpcId=null;audio.setScene(state.mode === 'home' ? 'home' : 'ocean');say('You leave with your peace intact.');return;}
     const result=resolveEncounter(state,activeNpcId,action,Math.random);transition(result);
     if(action==='fight'){byId(root,'encounter-actions').hidden=true;byId(root,'fight-actions').hidden=false;audio.setScene('fight');}
   }));
@@ -253,7 +259,7 @@ export function bootSirenShore(root = document, windowObject = window) {
   createInputController({pad:byId(root,'move-pad'),knob:byId(root,'move-knob'),actionButton:byId(root,'action-button'),target:windowObject,onMove:(x,y)=>{movement={x,y};},onAction:contextualAction});
   const resize=()=>{renderer.resize();portraitRenderer.resize();};windowObject.addEventListener('resize',resize);windowObject.addEventListener('orientationchange',resize);
   root.addEventListener('visibilitychange',()=>root.hidden?audio.suspend():audio.resume());
-  renderUi();animationFrameId=requestAnimationFrame(tick);
+  renderUi();if(state.mode === 'fight')restoreFightSheet();animationFrameId=requestAnimationFrame(tick);
   return { getState:()=>state, destroy(){cancelAnimationFrame(animationFrameId);renderer.destroy();portraitRenderer.destroy();audio.destroy();} };
 }
 
