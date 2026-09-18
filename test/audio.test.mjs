@@ -2,9 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   scoreProfileForScene,
+  openingMixProfile,
   endingProfile,
   normalizeSoundPreference,
 } from '../quizzes/youre-next-survival/assets/audio.mjs';
+
+test('opening score is audible on ordinary laptop and phone speakers', () => {
+  const mix = openingMixProfile();
+  assert.ok(mix.effectiveDroneGain >= 0.025, `effective drone gain ${mix.effectiveDroneGain} is too quiet`);
+  assert.ok(mix.audibleDroneFrequency >= 90, `audible drone frequency ${mix.audibleDroneFrequency} is too low`);
+});
 
 test('score intensity rises across the seven-scene case', () => {
   const profiles = Array.from({ length: 8 }, (_, index) => scoreProfileForScene(index));
@@ -38,4 +45,3 @@ test('stored sound preferences default on and recognize explicit off values', ()
   assert.equal(normalizeSoundPreference('off'), false);
   assert.equal(normalizeSoundPreference('unexpected'), true);
 });
-
