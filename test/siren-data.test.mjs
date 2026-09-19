@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateItem, generateShore, NPC_DEFINITIONS } from '../games/siren-shore/assets/data.mjs';
+import {
+  generateItem,
+  generateShore,
+  HAZARD_DEFINITIONS,
+  ITEM_ARCHETYPES,
+  NPC_DEFINITIONS,
+  ZONE_DEFINITIONS,
+} from '../games/siren-shore/assets/data.mjs';
 
 function cyclingRandom() {
   let n = 0;
@@ -35,4 +42,11 @@ test('persistent cast contains distinct dramatic mermaids', () => {
   assert.ok(NPC_DEFINITIONS.length >= 8);
   assert.equal(new Set(NPC_DEFINITIONS.map(({ id }) => id)).size, NPC_DEFINITIONS.length);
   assert.equal(NPC_DEFINITIONS.every(({ name, signatureRead, palette }) => name && signatureRead && palette.length >= 3), true);
+});
+
+test('living-ocean catalogs expose readable object and hazard silhouettes', () => {
+  assert.ok(ITEM_ARCHETYPES.some(({ id, chain, shape }) => id === 'coin' && chain === 'gold' && shape === 'coin'));
+  assert.ok(ITEM_ARCHETYPES.some(({ id, shape }) => id === 'crown' && shape === 'crown'));
+  assert.ok(HAZARD_DEFINITIONS.some(({ id, effect }) => id === 'jellyfish' && effect === 'release-item'));
+  assert.ok(ZONE_DEFINITIONS.length >= 5);
 });

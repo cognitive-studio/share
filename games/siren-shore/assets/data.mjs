@@ -9,6 +9,41 @@ const PALETTES = [
   ['#42e8d4', '#fb57b9', '#ffe8b6'], ['#7868ff', '#34d5ff', '#f8c5ff'], ['#ff865f', '#ffd95e', '#9d39ff'], ['#1bd2a4', '#0a6b87', '#f56fae'], ['#e5b8ff', '#6d5ce8', '#ffefcb'],
 ];
 
+export const ITEM_ARCHETYPES = Object.freeze([
+  { id: 'coin', slot: 'treasure', chain: 'gold', shape: 'coin', weight: 44, points: 4006 },
+  { id: 'pearl', slot: 'jewelry', chain: 'pearl', shape: 'pearl', weight: 22, points: 12880 },
+  { id: 'jewel', slot: 'jewelry', chain: 'jewelry', shape: 'gem', weight: 18, points: 94500 },
+  { id: 'crown', slot: 'crown', chain: 'jewelry', shape: 'crown', weight: 5, points: 388000 },
+  { id: 'bag', slot: 'purse', chain: 'couture', shape: 'bag', weight: 7, points: 74000 },
+  { id: 'junk', slot: 'treasure', chain: 'junk', shape: 'junk', weight: 24, points: 1888 },
+]);
+
+export const ZONE_DEFINITIONS = Object.freeze([
+  { id: 'champagne-reef', name: 'Champagne Reef', palette: ['#ffd95e', '#ffb3d7', '#42e8d4'], treasureChain: 'gold', hazards: ['jellyfish'] },
+  { id: 'sunken-mall', name: 'The Sunken Mall', palette: ['#7868ff', '#34d5ff', '#f8c5ff'], treasureChain: 'couture', hazards: ['eel'] },
+  { id: 'divorce-lagoon', name: 'Divorce Lagoon', palette: ['#ff865f', '#ffd95e', '#9d39ff'], treasureChain: 'jewelry', hazards: ['squid'] },
+  { id: 'unlicensed-pearl-district', name: 'The Unlicensed Pearl District', palette: ['#e5b8ff', '#6d5ce8', '#ffefcb'], treasureChain: 'pearl', hazards: ['jellyfish', 'eel'] },
+  { id: 'eveningwear-yacht-wreck', name: 'The Yacht Wreck Containing Only Eveningwear', palette: ['#1bd2a4', '#0a6b87', '#f56fae'], treasureChain: 'couture', hazards: ['squid', 'eel'] },
+  { id: 'cynthia-trench', name: 'The Trench Where Everyone Claims Not to Know Cynthia', palette: ['#42e8d4', '#fb57b9', '#ffe8b6'], treasureChain: 'junk', hazards: ['jellyfish', 'squid'] },
+]);
+
+export const HAZARD_DEFINITIONS = Object.freeze([
+  { id: 'jellyfish', shape: 'jellyfish', effect: 'release-item', points: 88000 },
+  { id: 'eel', shape: 'eel', effect: 'electric-hair', points: 111000 },
+  { id: 'squid', shape: 'squid', effect: 'ink-look', points: 204000 },
+]);
+
+export const POINT_AWARDS = Object.freeze({
+  find: 20,
+  remix: 35,
+  compliment: 8,
+  trade: 18,
+  shade: 12,
+  snatch: 30,
+  altercation: 45,
+  survivedEmbarrassment: 12,
+});
+
 export const NPC_DEFINITIONS = Object.freeze([
   { id: 'cynthia', name: 'Cynthia Undertow', signatureRead: 'That look has municipal funding.', temperament: 'territorial', preference: 'crown', palette: ['#f04b9b', '#5f2a86', '#ffd6ef'] },
   { id: 'marina', name: 'Marina Del Rey', signatureRead: 'I love that you committed before checking a mirror.', temperament: 'social', preference: 'purse', palette: ['#27d8cf', '#186f9d', '#ffeaa8'] },

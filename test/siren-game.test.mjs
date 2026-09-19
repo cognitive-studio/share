@@ -3,19 +3,28 @@ import assert from 'node:assert/strict';
 import { createDefaultState } from '../games/siren-shore/assets/state.mjs';
 import {
   advanceShore,
+  acquireCurrentItem,
   collectFind,
   createOuting,
   equipItem,
   packItem,
   remixItems,
+  resolveCombination,
   resolveEncounter,
   resolveFightMove,
   returnHome,
+  resumeOuting,
 } from '../games/siren-shore/assets/game.mjs';
 
 const low = () => 0.01;
 const high = () => 0.99;
 const middle = () => 0.5;
+
+function currentStateWithPoints(points) {
+  const state = createDefaultState(() => 0.5);
+  state.progression.points = points;
+  return state;
+}
 
 function seedState() {
   const state = createDefaultState(() => 0.4);
@@ -37,6 +46,36 @@ test('an outing creates finds without mutating the home state', () => {
   assert.match(events[0].text, /ocean/i);
 });
 
+test('a new outing starts its own falling Treasure Current', () => {
+  const home = createDefaultState(() => 0.2);
+  home.current.entities = [{ id: 'old-current', y: 500 }];
+  home.current.elapsed = 11;
+  const { state } = createOuting(home, middle);
+  assert.deepEqual(state.current.entities, []);
+  assert.equal(state.current.elapsed, 0);
+  assert.equal(home.current.entities[0].id, 'old-current');
+});
+
+test('advancing to a fresh shore retires the previous Treasure Current', () => {
+  const state = createOuting(createDefaultState(() => 0.2), middle).state;
+  state.current.entities = [{ id: 'previous-current', y: 500 }];
+  state.current.elapsed = 11;
+  const result = advanceShore(state, middle);
+  assert.deepEqual(result.state.current.entities, []);
+  assert.equal(result.state.current.elapsed, 0);
+});
+
+test('re-entering an existing shore starts a fresh Treasure Current', () => {
+  const ocean = createOuting(createDefaultState(() => 0.2), middle).state;
+  ocean.current.entities = [{ id: 'stale-current', y: 500 }];
+  ocean.current.elapsed = 11;
+  const home = returnHome(ocean).state;
+  const result = resumeOuting(home);
+  assert.equal(result.state.shore.id, ocean.shore.id);
+  assert.deepEqual(result.state.current.entities, []);
+  assert.equal(result.state.current.elapsed, 0);
+});
+
 test('an outing gives recurring NPCs property worth starting drama over', () => {
   const { state } = createOuting(createDefaultState(() => 0.2), middle);
   for (const npc of Object.values(state.npcs)) {
@@ -47,15 +86,27 @@ test('an outing gives recurring NPCs property worth starting drama over', () => 
   }
 });
 
-test('collecting appends provenance and awards legend xp', () => {
+test('collecting appends provenance and awards legend points', () => {
   const outing = createOuting(createDefaultState(() => 0.2), middle).state;
   const find = outing.shore.finds[0];
   const result = collectFind(outing, find.id);
   const item = result.state.inventory.find(({ id }) => id === find.item.id);
   assert.equal(item.ownerId, 'player');
   assert.match(item.history.at(-1), /claimed by Your Majesty/i);
-  assert.ok(result.state.progression.xp > 0);
+  assert.ok(result.state.progression.points > 0);
   assert.ok(result.state.purseIds.includes(item.id), 'new finds must remain at risk until home');
+});
+
+test('a legendary Current pickup preserves its tier at a one-times combo', () => {
+  const state = createDefaultState(() => 0.2);
+  const entity = {
+    id: 'current-legendary', tier: 'legendary', points: 388000,
+    item: { id: 'item-legendary', name: 'Public Crown', slot: 'crown', rarity: 'Interesting', ownerId: null, history: [], colors: ['#fff1d0', '#ff4faf'] },
+  };
+  const result = acquireCurrentItem(state, entity, 1);
+  const pickup = result.events.find(({ type }) => type === 'rarePickup');
+  assert.equal(pickup.tier, 'legendary');
+  assert.equal(pickup.multiplier, 1);
 });
 
 test('a full purse prevents claiming more field loot', () => {
@@ -135,6 +186,18 @@ test('SNATCH READ FLOURISH resolves nonlethally and can move property', () => {
   assert.ok(state.npcs.cynthia.wins + state.npcs.cynthia.losses === 1);
 });
 
+test('altercation spoils keep one durable object record and append their history', () => {
+  const state = seedState();
+  state.mode = 'fight';
+  state.fight = { npcId: 'cynthia', playerScore: 1, npcScore: 0, round: 2 };
+  const result = resolveFightMove(state, 'cynthia', 'read', low);
+  const spoils = result.state.inventory.filter(({ id }) => id === 'tiara-1');
+  assert.equal(spoils.length, 1);
+  assert.equal(spoils[0].ownerId, 'player');
+  assert.equal(result.state.npcs.cynthia.possessions.includes('tiara-1'), false);
+  assert.match(spoils[0].history.at(-1), /won from/i);
+});
+
 test('an unfinished fight records the current read for an accurate receipt', () => {
   const state = seedState();
   state.mode = 'fight';
@@ -167,4 +230,10 @@ test('returning home protects possessions and the next shore never ends the game
   assert.equal(next.mode, 'ocean');
   assert.equal(next.progression.shores, 1);
   assert.ok(next.shore.name);
+});
+
+test('lifetime Siren Points never decrease when a combination ends', () => {
+  const state = currentStateWithPoints(500000);
+  const result = resolveCombination(state, { chain: 'gold', count: 4, multiplier: 3 });
+  assert.ok(result.state.progression.points >= 500000);
 });

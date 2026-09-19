@@ -28,20 +28,9 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Run collection tests
         run: node --test test/*.test.mjs
-      - name: Check experience JavaScript
+      - name: Check every experience JavaScript module
         run: |
-          node --check quizzes/youre-next-couple/assets/app.mjs
-          node --check quizzes/youre-next-couple/assets/quiz.mjs
-          node --check quizzes/youre-next-survival/assets/app.mjs
-          node --check quizzes/youre-next-survival/assets/audio.mjs
-          node --check quizzes/youre-next-survival/assets/game.mjs
-          node --check games/siren-shore/assets/data.mjs
-          node --check games/siren-shore/assets/state.mjs
-          node --check games/siren-shore/assets/game.mjs
-          node --check games/siren-shore/assets/render.mjs
-          node --check games/siren-shore/assets/audio.mjs
-          node --check games/siren-shore/assets/share.mjs
-          node --check games/siren-shore/assets/app.mjs
+          find quizzes games -type f -name '*.mjs' -print0 | xargs -0 -r -n 1 node --check
       - name: Validate Siren Shore score
         run: python3 scripts/generate_siren_score.py --check
 

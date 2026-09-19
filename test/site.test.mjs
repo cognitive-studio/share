@@ -46,7 +46,8 @@ test('survival game exposes a self-contained sound control and score module', ()
   assert.match(entrypoint, /id=["']sound-toggle["']/);
   assert.match(app, /from ['"]\.\/audio\.mjs['"]/);
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/assets/audio.mjs')), true);
-  assert.match(workflow, /node --check quizzes\/youre-next-survival\/assets\/audio\.mjs/);
+  assert.match(workflow, /find quizzes games -type f -name ['"]\*\.mjs['"] -print0/);
+  assert.match(workflow, /xargs -0 -r -n 1 node --check/);
 });
 
 test('scene one exposes a diagnostic sound control without affecting a choice', () => {

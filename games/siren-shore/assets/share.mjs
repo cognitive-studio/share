@@ -15,15 +15,70 @@ const HEADLINES = {
 const RECEIPT_EVENTS = new Set(['rareFind', 'trade', 'snatch', 'victory', 'loss', 'levelUp', 'shade', 'read']);
 export const shouldOfferReceipt = (events = []) => events.some(({ type }) => RECEIPT_EVENTS.has(type));
 
+const CABINET_LIMIT = 48;
+const boundedRecords = (records, limit = CABINET_LIMIT) => (Array.isArray(records) ? records : []).slice(-limit).reverse();
+
+function nameForNpc(state, id) {
+  return typeof id === 'string' && state.npcs?.[id]?.name ? state.npcs[id].name : null;
+}
+
+function ownerName(state,id){return id==='player'?state.player?.name||'Your Majesty':nameForNpc(state,id)||'Loose in the Treasure Current';}
+
+export function createCabinetModel(state) {
+  const incidents = boundedRecords(state.social?.incidents).map((incident) => ({
+    ...incident,
+    text: incident.text || 'An event was observed. The ocean declines to clarify it.',
+    actorName: incident.actorName || (incident.actorId === 'player' ? state.player.name : nameForNpc(state, incident.actorId)),
+    targetName: incident.targetName || nameForNpc(state, incident.targetId) || nameForNpc(state, incident.npcId),
+  }));
+  const rumors = boundedRecords(state.social?.rumors).map((rumor) => ({ ...rumor, text: rumor.text || 'Someone heard something in the kelp.' }));
+  const peopleNamedInHistory = new Set();
+  for (const record of [...incidents, ...rumors]) {
+    for (const id of [record.actorId, record.targetId, record.npcId]) if (nameForNpc(state, id)) peopleNamedInHistory.add(id);
+  }
+  const mermaids = Object.entries(state.npcs || {})
+    .filter(([id, npc]) => peopleNamedInHistory.has(id) || (npc.memories || []).length || (npc.possessions || []).length)
+    .slice(0, 12)
+    .map(([id, npc]) => ({
+      id,
+      name: npc.name,
+      palette: npc.palette || [],
+      memories: boundedRecords(npc.memories, 8),
+      signatureRead: npc.signatureRead,
+      possessions: (npc.possessions || []).map(itemId => state.inventory?.find(item=>item.id===itemId)).filter(Boolean).map(item=>({id:item.id,name:item.name})),
+      relationships: Object.entries(state.social?.relationships||{}).filter(([key,edge])=>key.startsWith(`${id}→`)&&edge).map(([key,edge])=>({...edge,targetName:ownerName(state,key.split('→')[1])})),
+    }));
+  return {
+    points: Math.max(0, Math.floor(Number(state.progression?.points) || 0)),
+    title: state.player?.title || 'Unaccredited Mermaid',
+    objects: boundedRecords(state.inventory).map((item) => ({
+      id: item.id,
+      name: item.name,
+      origin: item.origin || '',
+      history: (Array.isArray(item.history)?[...item.history]:[]).reverse(),
+      ownerId: item.ownerId || null,
+      ownerName: ownerName(state,item.ownerId),
+      colors: item.colors || ['#36e5d1', '#ff4faf'],
+    })),
+    mermaids,
+    incidents: [...incidents, ...rumors].slice(0, CABINET_LIMIT),
+  };
+}
+
 export function createReceiptModel(state, locationHref) {
   const incident = state.lastIncident || { type: 'find', text: `${state.player.name} remains available for discovery.` };
-  const object = state.inventory.find(({ id }) => id === incident.itemId) || {
+  const object = state.inventory.find(({ id }) => id === incident.itemId)
+    || Object.values(state.equipped || {}).map((id) => state.inventory.find((item) => item.id === id)).find(Boolean)
+    || {
     name: 'The Entire Look',
     origin: `Assembled at ${state.shore?.name || 'a private grotto'}.`,
     history: ['Worn without requesting permission.'],
     colors: ['#36e5d1', '#ff4faf'],
   };
-  const npc = incident.npcName || (incident.npcId && state.npcs[incident.npcId]?.name);
+  const npc = incident.npcName
+    || (incident.npcId && state.npcs[incident.npcId]?.name)
+    || (incident.targetId && state.npcs[incident.targetId]?.name)
+    || (incident.actorId && incident.actorId !== 'player' && state.npcs[incident.actorId]?.name);
   const caption = npc
     ? `${npc} was present and has chosen to make that everyone’s problem.`
     : 'The ocean declined to comment. The object did not.';
@@ -34,9 +89,15 @@ export function createReceiptModel(state, locationHref) {
     headline: HEADLINES[incident.type] || 'A MERMAID HAS BEEN OBSERVED',
     caption,
     incident: incident.text,
+    lastIncident: incident.text,
     npc,
     object: { name: object.name, colors: object.colors || ['#36e5d1', '#ff4faf'] },
+    featuredItem: { name: object.name, colors: object.colors || ['#36e5d1', '#ff4faf'] },
     provenance: object.history?.at(-1) || object.origin || 'Acquired under conditions nobody can now verify.',
+    points: Math.max(0, Math.floor(Number(state.progression?.points) || 0)),
+    pointsLabel: `${Math.max(0, Math.floor(Number(state.progression?.points) || 0)).toLocaleString()} SIREN POINTS`,
+    allegation: npc ? `${npc} disputes this account.` : 'No one has formally disputed this account. Yet.',
+    look: `LOOK ${String(state.player.hair + 1).padStart(2, '0')} · TAIL ${String(state.player.tail + 1).padStart(2, '0')} · FACE ${String(state.player.makeup + 1).padStart(2, '0')}`,
     mermaid: {
       hair: state.player.hair,
       tail: state.player.tail,
@@ -101,12 +162,14 @@ export function renderReceipt(canvas, model) {
   context.fillStyle='#36e5d1';context.font='900 25px system-ui';context.letterSpacing='4px';context.fillText('SIREN SHORE // OFFICIAL RECEIPT',92,115);
   context.fillStyle='#fff';context.font='900 70px Impact, sans-serif';wrap(context,model.headline,92,205,896,70,2);
   drawReceiptMermaid(context,model);
-  context.fillStyle='#ff4faf';context.font='900 36px Impact, sans-serif';context.fillText(model.title.toUpperCase(),92,870);
-  context.fillStyle='#fff1d0';context.font='900 22px system-ui';context.fillText(`SIREN LEVEL ${String(model.level).padStart(2,'0')}`,92,910);
-  context.fillStyle=model.object.colors?.[0]||'#36e5d1';context.fillRect(92,958,24,24);
-  context.fillStyle='#fff';context.font='900 34px system-ui';wrap(context,model.object.name,132,980,800,42,2);
-  context.fillStyle='#c6dce7';context.font='500 24px system-ui';let y=wrap(context,model.provenance,92,1065,896,33,2)+20;
-  context.fillStyle='#fff';context.font='800 25px system-ui';wrap(context,model.caption,92,y,896,34,3);
+  context.fillStyle='#ff4faf';context.font='900 36px Impact, sans-serif';context.fillText(model.title.toUpperCase(),92,850);
+  context.fillStyle='#fff1d0';context.font='900 22px system-ui';context.fillText(`SIREN LEVEL ${String(model.level).padStart(2,'0')} · ${model.pointsLabel}`,92,890);
+  context.fillStyle='#36e5d1';context.font='800 18px ui-monospace, monospace';context.fillText(model.look,92,925);
+  context.fillStyle=model.featuredItem.colors?.[0]||'#36e5d1';context.fillRect(92,956,24,24);
+  context.fillStyle='#fff';context.font='900 30px system-ui';wrap(context,model.featuredItem.name,132,978,800,37,2);
+  context.fillStyle='#c6dce7';context.font='500 21px system-ui';let y=wrap(context,model.provenance,92,1055,896,29,2)+14;
+  context.fillStyle='#fff';context.font='800 22px system-ui';y=wrap(context,model.lastIncident,92,y,896,30,2)+12;
+  context.fillStyle='#ff4faf';context.font='900 21px system-ui';wrap(context,model.allegation,92,y,896,28,2);
   context.fillStyle='#36e5d1';context.font='800 20px ui-monospace, monospace';context.fillText(model.url.replace(/^https?:\/\//,''),92,1252);
   return canvas;
 }
@@ -126,7 +189,13 @@ export async function shareReceipt({ canvas, navigatorObject = navigator, docume
   }
   const file = typeof File === 'function' ? new File([blob], 'siren-shore-receipt.png', { type: 'image/png' }) : Object.assign(blob, { name: 'siren-shore-receipt.png' });
   const payload = { title: 'Siren Shore Receipt', text: 'The ocean keeps receipts. Mine is attached.', url, files: [file] };
-  if (navigatorObject.share && navigatorObject.canShare?.({ files: payload.files })) {
+  let nativeShareAvailable = false;
+  try {
+    nativeShareAvailable = typeof navigatorObject.share === 'function'
+      && typeof navigatorObject.canShare === 'function'
+      && navigatorObject.canShare({ files: payload.files });
+  } catch { /* Capability probes are advisory; use the next local fallback. */ }
+  if (nativeShareAvailable) {
     try { await navigatorObject.share(payload);return { method: 'native', canceled: false }; }
     catch (error) { if (error?.name === 'AbortError') return { method: 'native', canceled: true }; }
   }
