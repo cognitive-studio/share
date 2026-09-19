@@ -37,3 +37,11 @@ Experience assets use relative URLs so every game and quiz remains portable bene
 5. Push to `main`; the Pages workflow validates and publishes automatically.
 
 No build system, external assets, analytics, or runtime services are required.
+
+## Siren Shore on a phone
+
+- Drag the pearl control to swim. Release it and the mermaid glides to a predictable stop.
+- Tap the contextual button to claim, approach, or call; its label tells you what is currently in reach.
+- Treasure Rushes and swells end without failure. Hazards rearrange the scene, never your right to continue.
+- Progress persists locally on the device, including your points, possessions, grudges, and receipts.
+- Sound requires the opening touch, and haptics depend on device support; both can be disabled under **More**.

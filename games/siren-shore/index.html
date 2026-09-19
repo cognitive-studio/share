@@ -13,7 +13,7 @@
   </head>
   <body>
     <main id="game" class="game" data-mode="home">
-      <canvas id="ocean-canvas" aria-label="The explorable ocean"></canvas>
+      <canvas id="ocean-canvas" data-arcade-layers="far mid foreground effects" aria-label="The explorable ocean"></canvas>
       <div class="scanlines" aria-hidden="true"></div>
 
       <header id="hud" class="hud">
@@ -22,6 +22,13 @@
       </header>
 
       <div class="xp-track" aria-label="Legend progress"><span id="xp-fill"></span></div>
+      <section class="current-status" aria-label="Siren progress">
+        <strong id="points-value">0</strong><span>SIREN POINTS</span>
+        <span id="combo-label">TREASURE THEORY</span><b id="combo-count">×1</b>
+      </section>
+      <aside id="rush-banner" class="rush-banner" aria-live="polite" hidden>TREASURE RUSH</aside>
+      <aside id="swell-banner" class="swell-banner" aria-live="polite" hidden></aside>
+      <output id="arcade-caption" class="arcade-caption" aria-live="polite" hidden></output>
       <output id="toast" class="toast" aria-live="polite">Everything here is safe. Nobody gets a vote.</output>
       <button id="receipt-offer" class="receipt-offer" type="button" hidden>THE OCEAN HAS A RECEIPT <span>VIEW →</span></button>
       <div id="live-region" class="sr-only" aria-live="polite"></div>
@@ -41,7 +48,7 @@
         <div id="move-pad" class="move-pad" role="group" aria-label="Swim direction">
           <span class="pad-ring"></span><span id="move-knob" class="move-knob"></span>
         </div>
-        <button type="button" id="action-button" class="action-button"><span id="action-label">LOOK</span><small>NEARBY</small></button>
+        <button type="button" id="action-button" class="action-button"><span id="action-label">CALL</span><small id="action-detail">INTO THE DARK</small></button>
       </section>
 
       <nav class="tabbar" aria-label="Siren actions">
@@ -108,11 +115,25 @@
         <p id="share-status" class="fineprint">Luxury image. Disgraceful caption. No save data leaves this device.</p>
       </section>
 
+      <section id="cabinet-sheet" class="sheet tall" role="dialog" aria-modal="true" aria-labelledby="cabinet-title" hidden>
+        <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
+        <span class="kicker">PRIVATE, LOCAL, AND LEGALLY VIBRANT</span><h2 id="cabinet-title">Cabinet of Allegations</h2>
+        <p class="cabinet-intro">An optional little archive. No scorecard, no homework, no one is waiting.</p>
+        <div class="cabinet-tabs" role="tablist" aria-label="Cabinet records">
+          <button id="cabinet-things" type="button" role="tab" aria-selected="true" data-cabinet-tab="things">THINGS</button>
+          <button id="cabinet-mermaids" type="button" role="tab" aria-selected="false" data-cabinet-tab="mermaids">MERMAIDS</button>
+          <button id="cabinet-incidents" type="button" role="tab" aria-selected="false" data-cabinet-tab="incidents">INCIDENTS</button>
+        </div>
+        <div id="cabinet-content" class="cabinet-content" role="tabpanel" aria-live="polite"></div>
+      </section>
+
       <section id="settings-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
         <button class="sheet-close" type="button" data-close-sheets aria-label="Close">×</button>
         <span class="kicker">HOUSE RULES</span><h2 id="settings-title">More</h2>
         <label class="toggle"><span><b>MUSIC</b><small>camp aquatic score</small></span><input id="music-toggle" type="checkbox" checked></label>
         <label class="toggle"><span><b>GET THE EFFECTS</b><small>snaps, finds, reads, consequences</small></span><input id="effects-toggle" type="checkbox" checked></label>
+        <label class="toggle"><span><b>HAPTIC GOSSIP</b><small>a private tap when the water has news</small></span><input id="haptics-toggle" type="checkbox" checked></label>
+        <button type="button" data-open="cabinet-sheet">OPEN THE CABINET OF ALLEGATIONS</button>
         <button type="button" id="new-shore">GENERATE ANOTHER SHORE</button>
         <button type="button" id="return-home">RETURN TO THE GROTTO</button>
         <button type="button" id="reset-game" class="danger">ERASE THIS ENTIRE SOCIAL HISTORY</button>

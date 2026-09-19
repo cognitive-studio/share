@@ -36,6 +36,7 @@ test('quiz entrypoints and Pages workflow exist', () => {
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/index.html')), true);
   assert.equal(existsSync(resolve(root, '.github/workflows/pages.yml')), true);
   assert.equal(existsSync(resolve(root, 'games/siren-shore/index.html')), true);
+  assert.match(read('.github/workflows/pages.yml'), /apt-get install -y ffmpeg/);
 });
 
 test('survival game exposes a self-contained sound control and score module', () => {
@@ -45,7 +46,8 @@ test('survival game exposes a self-contained sound control and score module', ()
   assert.match(entrypoint, /id=["']sound-toggle["']/);
   assert.match(app, /from ['"]\.\/audio\.mjs['"]/);
   assert.equal(existsSync(resolve(root, 'quizzes/youre-next-survival/assets/audio.mjs')), true);
-  assert.match(workflow, /node --check quizzes\/youre-next-survival\/assets\/audio\.mjs/);
+  assert.match(workflow, /find quizzes games -type f -name ['"]\*\.mjs['"] -print0/);
+  assert.match(workflow, /xargs -0 -r -n 1 node --check/);
 });
 
 test('scene one exposes a diagnostic sound control without affecting a choice', () => {
